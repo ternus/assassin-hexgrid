@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd ">
+<svg width="8.5in" height="11.0in" xmlns="http://www.w3.org/2000/svg" >
+	<desc>map grid</desc>
+	<text y="380.77791344" x="315.882685902" font-size="9">314</text>
+	<polygon stroke-width="0.01in" stroke="black" points="301.5, 389.77791344019079  315.0, 413.16059934237057  342.0, 413.16059934237057  355.5, 389.77791344019079  342.0, 366.39522753801094  315.0, 366.39522753801094  " fill="none"/>
+	<text y="396.97791344" x="315.882685902" font-size="9">bazaar</text>
+	<text y="427.543285245" x="315.882685902" font-size="9">316</text>
+	<polygon stroke-width="0.01in" stroke="black" points="301.5, 436.54328524455047  315.0, 459.92597114673026  342.0, 459.92597114673026  355.5, 436.54328524455047  342.0, 413.16059934237057  315.0, 413.16059934237057  " fill="none"/>
+	<text y="443.743285245" x="315.882685902" font-size="9">Achmed</text>
+	<text y="474.308657049" x="315.882685902" font-size="9">318</text>
+	<polygon stroke-width="0.01in" stroke="black" points="301.5, 483.30865704891016  315.0, 506.69134295108995  342.0, 506.69134295108995  355.5, 483.30865704891016  342.0, 459.92597114673026  315.0, 459.92597114673026  " fill="none"/>
+	<text y="490.508657049" x="315.882685902" font-size="9">Bob</text>
+</svg>

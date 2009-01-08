@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd ">
+<svg width="8.5in" height="11.0in" xmlns="http://www.w3.org/2000/svg" >
+	<desc>map grid</desc>
+	<text y="427.543285245" x="315.882685902" font-size="9">316</text>
+	<polygon stroke-width="0.01in" stroke="black" points="301.5, 436.54328524455047  315.0, 459.92597114673026  342.0, 459.92597114673026  355.5, 436.54328524455047  342.0, 413.16059934237057  315.0, 413.16059934237057  " fill="none"/>
+	<text y="443.743285245" x="315.882685902" font-size="9">Achmed</text>
+</svg>

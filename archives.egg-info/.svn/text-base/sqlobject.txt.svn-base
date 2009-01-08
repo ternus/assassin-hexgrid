@@ -1,0 +1,2 @@
+db_module=archives.model
+history_dir=$base/archives/sqlobject-history
