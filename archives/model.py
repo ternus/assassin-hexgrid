@@ -4,7 +4,7 @@ from sqlobject import *
 from turbogears import identity
 from random import random, sample, shuffle
 from datetime import *
-from controllers import *
+
 
 hub = PackageHub("archives")
 __connection__ = hub
@@ -15,12 +15,12 @@ rumorCost = 1
 
 costDuration = timedelta(1)
 
-def today():
-    if len(list(Interaction.select(Interaction.q.id == 1))):
-        return Interaction.get(1).day
-    else:
-        inter = Interaction(day=0,character="DAY",node=0000,item="none")
-        return Interaction.get(1).day
+# def today():
+#     if len(list(Interaction.select(Interaction.q.id == 1))):
+#         return Interaction.get(1).day
+#     else:
+#         inter = Interaction(day=0,character="DAY",node=0000,item="none")
+#         return Interaction.get(1).day
 
 
 class Dir:
