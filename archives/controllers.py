@@ -478,6 +478,21 @@ class Root(controllers.RootController):
         return dict(map=map, backstr="/"+str(char.currentNode))
         
 
+    @expose(template="archives.templates.map")
+    @identity.require(identity.not_anonymous())
+    def allmap(self):
+        char = Character.byName(turbogears.identity.current.user.character)
+        nodes = {}#{startNode: Node.byHex(startNode).name}
+        for entry in Node.select(Node.q.name != ""): #Browsing.select(Browsing.q.character == char.name):
+            nodes[entry.hex] = Node.byHex(entry.hex).name
+        gridMap.setNodes(nodes)
+        gridMap.setName(char.name)
+        gridMap.save("archive/static/images/map" + char.name + ".svg")
+        os.spawnlp(os.P_WAIT, "convert", "", "archive/static/images/map"+char.name+".svg", "archive/static/images/map"+char.name+".png")
+        map = "<img src='static/images/map"+char.name+".png' />"
+        return dict(map=map, backstr="/"+str(char.currentNode))
+        
+
                                           
     @expose(template="archives.templates.notifications")
     @identity.require(identity.not_anonymous())
@@ -534,7 +549,10 @@ class Root(controllers.RootController):
         char.notify(thenode.name + " told you a rumor about " + therumor.subject + " for " + str(therumor.cost) + " deben:<br/>" + therumor.text)
         thenode.notifyWatchers(char, "heard a rumor about " + therumor.subject + " from")
         char.wealth -= therumor.cost
-        therumor.removeNode(thenode)
+        if therumor in thenode.info:
+            thenode.removeInfo(therumor)
+        if thenode in therumor.node:
+            therumor.removeNode(thenode)
         thenode.popRumors()
         
         goback = "<a href='/"+thehex+"'>Go back to the node.</a>"

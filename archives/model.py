@@ -15,12 +15,12 @@ rumorCost = 1
 
 costDuration = timedelta(1)
 
-# def today():
-#     if len(list(Interaction.select(Interaction.q.id == 1))):
-#         return Interaction.get(1).day
-#     else:
-#         inter = Interaction(day=0,character="DAY",node=0000,item="none")
-#         return Interaction.get(1).day
+def today():
+    if len(list(Interaction.select(Interaction.q.id == 1))):
+        return Interaction.get(1).day
+    else:
+        inter = Interaction(day=0,character="DAY",node=0000,item="none")
+        return Interaction.get(1).day
 
 
 class Dir:
@@ -35,12 +35,11 @@ class Node(SQLObject):
     text = UnicodeCol()
     oneword = StringCol()
     quickdesc = StringCol()
-    password = StringCol()
-    passtext = UnicodeCol()
     forsale = RelatedJoin("Item")
     users = RelatedJoin("Character", intermediateTable="node_users")
     watchers = RelatedJoin("Character", addRemoveName="Watcher", joinColumn = "node", otherColumn = "character", intermediateTable="watchtable")
     info = RelatedJoin("Info")
+    deaduntil = IntCol()
     rumorsatonce = IntCol()
     rumorsperday = IntCol()
     
@@ -54,6 +53,8 @@ class Node(SQLObject):
 
     def popRumors(self):
         print "Popping rumors for "+self.name
+        if self.rumorsToday() >= self.rumorsperday and self.rumorsperday: # That's enough rumors for now, lads
+            return
         counter = 0
         for rumor in self.info:
             if (random() < rumor.probability / 2):
@@ -66,12 +67,12 @@ class Node(SQLObject):
                 shuffle(ni)
                 for nearrumor in ni:
                     while(len(self.info) < self.rumorsatonce):
-                        if (random() < nearrumor.probability and nearrumor.visible and nearrumor.valid):
+                        if (random() < nearrumor.probability and nearrumor.visible and nearrumor.valid and not nearrumor in self.info):
                             self.addInfo(nearrumor)
                             print "Added rumor " + nearrumor.subject
 
         while (len(self.info) < self.rumorsatonce and counter < 20): # Max 20 passes
-            if self.rumorsToday() >= self.rumorsperday: # That's enough rumors for now, lads
+            if self.rumorsToday() >= self.rumorsperday and self.rumorsperday: # That's enough rumors for now, lads
                 return
             allrumors = list(Info.select(AND(Info.q.probability > 0,
                                         Info.q.visible == True,
@@ -79,7 +80,7 @@ class Node(SQLObject):
             shuffle(allrumors)
             for rumor in allrumors:
                 print "Checking " + rumor.subject
-                if (random() < rumor.probability):
+                if (random() < rumor.probability and not rumor in self.info):
                     self.addInfo(rumor)
                     print "Added rumor " + rumor.subject
 
@@ -151,19 +152,30 @@ class Node(SQLObject):
         one = set([self]) # Watchers on the node get three pieces of info.
         two = self.getAllWatchedNodes(1) #watchers one step away get two of the three.
         three = self.getAllWatchedNodes(2) #watchers two steps away get one of the three.
-        
+        twolist = []
+        threelist = []
+        """ I bet there's a better way to do this."""
+        for node in two:
+            for char in node.watchers:
+                twolist += [char]
+        for node in three:
+            for char in node.watchers:
+                threelist += [char]
         nstring = "Your agent at " + self.name + "(" + str(self.hex) + ") tells you:<p>"
         notified = [who] #don't notify someone of what they're doing
         for char in self.watchers:
             if char in notified:
                 continue
-            char.notify(nstring + who.name + " " + what + " " + self.name + ".</p>")
-            notified += [char]
-        if two:
-            for node in two:
-                for char in node.watchers:
-                    if char in notified:
-                        continue
+            if (random() < 1.0/3):
+                char.notify(nstring + "Someone " + what + " " + self.name + ".</p>")
+            else:
+                char.notify(nstring + who.name + " " + what + " " + self.name + ".</p>")
+                notified += [char]
+        if twolist:
+            for char in twolist:
+                if char in notified:
+                    continue
+                if char in self.watchers or random() > 1.0/3:
                     nstring = "Your agent at " + node.name + "(" + str(node.hex) + ") tells you:<br/>"
                     got = sample(info, 2)
                     if "who" in got:
@@ -180,11 +192,13 @@ class Node(SQLObject):
                         nstring += "someone."
                     char.notify(nstring)
                     notified += [char]
-        if three:
-            for node in three:
-                for char in node.watchers:
-                    if char in notified:
-                        continue
+                else:
+                    threelist += [char]
+        if threelist:
+            for char in threelist:
+                if char in notified:
+                    continue
+                if char in twolist or random() > 1.0/3:
                     nstring = "Your agent at " + node.name + "(" + str(node.hex) + ") tells you:<br/>"
                     got = sample(info, 1)
                     if "who" in got:
@@ -201,7 +215,17 @@ class Node(SQLObject):
                         nstring += "someone."
                     char.notify(nstring)
                     notified += [char]
+                else:
+                    continue # No info for you
 
+class Secret(SQLObject):
+    secretname = StringCol(alternateID=True,unique=True,notNone=True) #never shown to players
+    password = StringCol(alternateID=True,unique=True,notNone=True)
+    passtext = UnicodeCol()
+    moneycost = IntCol()
+    othercost = UnicodeCol()
+    node = RelatedJoin("Node")
+    valid = BoolCol()
 
     
 class Character(SQLObject):
@@ -214,6 +238,8 @@ class Character(SQLObject):
     marketstat = IntCol()
     nodes = RelatedJoin("Node", intermediateTable="node_users")
     watching = RelatedJoin("Node", addRemoveName="WatchedNode", joinColumn = "character", otherColumn = "node", intermediateTable="watchtable")
+    isdisguised = BoolCol(default=False)
+    hasdisguise = BoolCol(default=False)
     
     def hasHex(self, hex):
         return ((Node.byHex(hex) in self.nodes) or Node.byHex(hex).isStart())
