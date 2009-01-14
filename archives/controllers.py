@@ -143,7 +143,7 @@ class Root(controllers.RootController):
             itemwad += buystrings[int(hashlib.md5(item.name).hexdigest()[0], 16)] % item.realcost() # don't worry about it
             if item.realcost() <= char.wealth:
                 # : " + str(item.realcost()) + " deben
-                itemwad += " [<a href=\'/buy/"+str(node.hex)+"/"+item.name+"'>BUY</a>]"
+                itemwad += " [<a href=\'/buy/"+str(node.hex)+"/"+str(item.id)+"'>BUY</a>]"
             else:
                 # : " + str(item.realcost()) + " deben
                 itemwad += " [too expensive]"
@@ -538,12 +538,12 @@ class Root(controllers.RootController):
 
     @expose(template="archives.templates.buy")
     @identity.require(identity.not_anonymous())
-    def buy(self, thehex, item):
+    def buy(self, thehex, itemid):
         char = Character.byName(turbogears.identity.current.user.character)
         if not char.hasHex(thehex):
             flash("You don't know anyone selling that item!")
             raise turbogears.redirect("/" + char.currentNode)
-        theitem = Item.byName(item)
+        theitem = Item.get(itemid)
         thecost = theitem.realcost()
         if (thecost > char.wealth):
             flash("You need " +str(thecost - char.wealth) + " more deben to buy that item!")
