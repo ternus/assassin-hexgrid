@@ -8,6 +8,7 @@ import re
 from sqlobject import SQLObjectNotFound
 import gridmaps, os
 from datetime import *
+import hashlib
 
 from archives import json
 # import logging
@@ -86,7 +87,7 @@ class Root(controllers.RootController):
         char.currentNode = node.hex
 
         html_text = publish_parts(node.text, writer_name="html")['html_body']
-        html_text = othernodes.sub(r'<a href="%s\1">\1</a>' % root, html_text, 99)
+        #html_text = othernodes.sub(r'<a href="%s\1">\1</a>' % root, html_text, 99)
 
         neighbors = Neighbors()
         row = (node.hex % 100) / 100
@@ -96,7 +97,6 @@ class Root(controllers.RootController):
         print "Column is " + str(col)
 
         neighbors.north = Root.neighborstat(self, Dir.north, root)
-        # Warning: below syntax requires Python 2.5
         neighbors.northeast = Root.neighborstat(self, Dir.northeast , root)
         neighbors.southeast = Root.neighborstat(self, Dir.southeast, root)
         neighbors.south = Root.neighborstat(self, Dir.south, root)
@@ -120,13 +120,33 @@ class Root(controllers.RootController):
         if (neighborwad != ""):
             neighborwad = "<p>I know these people:</p><ul>" + neighborwad + "</ul>"
 
+        buystrings = [". %d deben is the lowest I can go!",
+                      ", a steal at only %d deben!",
+                      ". %d deben, cheap at twice the price!",
+                      ". %d deben is cutting my own throat!",
+                      ". For you, only %d deben!",
+                      ", today only %d deben!",
+                      ". %d deben, special offer!",
+                      ", just %d deben!",
+                      ". Couldn't let it go for less than %d deben!",
+                      ". %d deben, best price you'll see today!",
+                      ". Less than %d deben would just be ridiculous!",
+                      " could be yours for %d deben!",
+                      ", selling fast at %d deben!",
+                      ".  The Pharaoh himself couldn't get less than %d deben!",
+                      ". Priced to move at %d deben!",
+                      ". %d deben, buy it or lose it!"]
+
         itemwad = ""
         for item in node.forsale:
             itemwad += "<li>" + item.name
+            itemwad += buystrings[int(hashlib.md5(item.name).hexdigest()[0], 16)] % item.realcost() # don't worry about it
             if item.realcost() <= char.wealth:
-                itemwad += " [<a href=\'/buy/"+str(node.hex)+"/"+item.name+"'>BUY</a>: " + str(item.realcost()) + " deben]"
+                # : " + str(item.realcost()) + " deben
+                itemwad += " [<a href=\'/buy/"+str(node.hex)+"/"+item.name+"'>BUY</a>]"
             else:
-                itemwad += " [too expensive: " + str(item.realcost()) + " deben]"
+                # : " + str(item.realcost()) + " deben
+                itemwad += " [too expensive]"
             itemwad += "</li>"
         if itemwad != "":
             itemwad = "<p>I have these items for sale:</p><ul>" + itemwad + "</ul>"
@@ -167,7 +187,7 @@ class Root(controllers.RootController):
         watched = ""
         
         for wnode in char.watching:
-            watched += "<a href='/"+str(wnode.hex)+"'>"+wnode.name+"</a>("+str(wnode.hex)+")<br/>"
+            watched += "<a href='/"+str(wnode.hex)+"'>"+wnode.name+"</a><br/>"
 
 
 #         try:
@@ -530,7 +550,7 @@ class Root(controllers.RootController):
             raise turbogears.redirect("/" + char.currentNode)
         thenode = Node.byHex(thehex)
         inter = Interaction(character=char.name, day=today(), node=thenode.hex, item=theitem.name)
-        char.notify("You bought " + theitem.name + " from " + thenode.name + " at " + str(thenode.hex) + " for " + str(thecost) + ".")
+        char.notify("You bought " + theitem.name + " from " + thenode.name + " for " + str(thecost) + ".")
         thenode.notifyWatchers(char, "bought " + theitem.name + " from")
         char.wealth -= thecost
         goback = "<a href='/"+thehex+"'>Go back to " + thenode.name + ".</a>"
