@@ -505,6 +505,7 @@ class Root(controllers.RootController):
     @identity.require(identity.not_anonymous())
     def allmap(self):
         char = Character.byName(turbogears.identity.current.user.character)
+        thenode = Node.byHex(char.currentNode)
         nodes = {}#{startNode: Node.byHex(startNode).name}
         for entry in Node.select(Node.q.name != ""): #Browsing.select(Browsing.q.character == char.name):
             nodes[entry.hex] = {"name":Node.byHex(entry.hex).name, "desc": Node.byHex(entry.hex).oneword}
@@ -515,7 +516,8 @@ class Root(controllers.RootController):
         gridMap.save("archive/static/images/map" + char.name + ".svg")
         os.spawnlp(os.P_WAIT, "convert", "", "archive/static/images/map"+char.name+".svg", "archive/static/images/map"+char.name+".png")
         map = "<img src='static/images/map"+char.name+".png' />"
-        return dict(map=map, backstr="/"+str(char.currentNode))
+        goback = "<a href='/"+str(thenode.hex)+"'>Go back to " + thenode.name + ".</a>"
+        return dict(map=map, goback=goback)
         
 
                                           
