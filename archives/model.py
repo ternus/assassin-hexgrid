@@ -42,6 +42,7 @@ class Node(SQLObject):
     deaduntil = IntCol()
     rumorsatonce = IntCol()
     rumorsperday = IntCol()
+    secrets = RelatedJoin("Secret", joinColumn="hex_id", intermediateTable="node_secret")
     
     def rumorsSoldToday(self):
         return len(list(Interaction.select(AND(Interaction.q.day == today(), 
@@ -149,6 +150,7 @@ class Node(SQLObject):
         info = ("who", "what", "where")
         two = None
         three = None
+        # there is a 1/3 chance of getting the information from the next lowest class.
         one = set([self]) # Watchers on the node get three pieces of info.
         two = self.getAllWatchedNodes(1) #watchers one step away get two of the three.
         three = self.getAllWatchedNodes(2) #watchers two steps away get one of the three.
@@ -166,11 +168,11 @@ class Node(SQLObject):
         for char in self.watchers:
             if char in notified:
                 continue
-            if (random() < 1.0/3):
-                char.notify(nstring + "Someone " + what + " " + self.name + ".</p>")
-            else:
-                char.notify(nstring + who.name + " " + what + " " + self.name + ".</p>")
+            if (random() > 1.0/3):
+                char.notify(nstring + who.getName() + " " + what + " " + self.name + ".</p>")
                 notified += [char]
+            else:
+                twolist += [char]
         if twolist:
             for char in twolist:
                 if char in notified:
@@ -179,7 +181,7 @@ class Node(SQLObject):
                     nstring = "Your agent at " + node.name + "(" + str(node.hex) + ") tells you:<br/>"
                     got = sample(info, 2)
                     if "who" in got:
-                        nstring += who.name + " "
+                        nstring += who.getName() + " "
                     else:
                         nstring += "Someone "
                     if "what" in got:
@@ -202,7 +204,7 @@ class Node(SQLObject):
                     nstring = "Your agent at " + node.name + "(" + str(node.hex) + ") tells you:<br/>"
                     got = sample(info, 1)
                     if "who" in got:
-                        nstring += who.name + " "
+                        nstring += who.getName() + " "
                     else:
                         nstring += "Someone "
                     if "what" in got:
@@ -218,14 +220,15 @@ class Node(SQLObject):
                 else:
                     continue # No info for you
 
+    
+
 class Secret(SQLObject):
-    secretname = StringCol(alternateID=True,unique=True,notNone=True) #never shown to players
     password = StringCol(alternateID=True,unique=True,notNone=True)
     passtext = UnicodeCol()
     moneycost = IntCol()
     othercost = UnicodeCol()
-    node = RelatedJoin("Node")
-    valid = BoolCol()
+    node = RelatedJoin("Node", otherColumn="hex_id", intermediateTable="node_secret")
+    valid = BoolCol(default=True)
 
     
 class Character(SQLObject):
@@ -253,6 +256,11 @@ class Character(SQLObject):
     def notify(self, text):
         return Notification(charname=self.name, text=text, visible=True, new=True)
 
+    def getName(self):
+        if (self.isdisguised):
+            return "A mysterious person"
+        else:
+            return self.name
 
 class Interaction(SQLObject):
 #     class sqlmeta:

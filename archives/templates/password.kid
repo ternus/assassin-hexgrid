@@ -13,7 +13,7 @@
     <div>
         <h1></h1>
         <p> <blockquote>
-	    <span py:replace="pwstring">Secrets and lies!</span>
+	    <span py:replace="XML(pwstring)">Secrets and lies!</span>
 	  </blockquote>
 	  <br/>
 	  <span py:replace="XML(goback)"></span></p>

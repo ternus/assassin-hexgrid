@@ -9,7 +9,9 @@
   <div class="main_content">
     <h1>Your Map</h1>
     <i>Remember that this map is not in game!  Do not share it with anyone.</i><br/>
-    <a href="javascript: history.go(-1)">Go back</a>.<p/>
+    <!-- <a href="javascript: history.go(-1)">Go back</a>.<p/>-->
+	 <a href="/">Return to Bazaar</a>
+	 <span py:replace="XML(goback)">error</span>
 
     <span py:replace="XML(map)">Image </span>
   </div>

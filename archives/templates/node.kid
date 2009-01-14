@@ -13,11 +13,11 @@
       Market points and <span py:replace="character.wealth">one
       million</span> deben remaining.<br/>
       It is day <span py:replace="today">N</span>.<p/>
-      You are haggling with <b><span py:replace="node.name">node</span></b>
-      at hex (<span py:replace="node.hex">XXYY</span>).<br/>
+      You are haggling with <b><span py:replace="node.name">node</span>.</b>
+      <!--at hex (<span py:replace="node.hex">XXYY</span>).--><br/>
 
-
-      <a href="/points">Check Stats</a><br/>
+      <a href="/">Return to Bazaar</a><br/>
+      <a href="/points">Modify Points</a><br/>
       <a href="/notifications">Check Log</a><span py:replace="XML(notif)">Notify error</span><br/>
       <a href="/transfer">Transfer Money</a><br/>
       <a href="/map">View Map</a><br/>

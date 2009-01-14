@@ -54,7 +54,7 @@ class Root(controllers.RootController):
             except SQLObjectNotFound:
                 raise turbogears.redirect("notfound", title = hex)
 
-        print "Found node: " + node.name
+        print "Found merchant: " + node.name
 
         # Grab our character.
         char = Character.byName(turbogears.identity.current.user.character)
@@ -77,10 +77,10 @@ class Root(controllers.RootController):
                                               node = node.hex,
                                               day = today(),
                                               item = "none")
-                    char.notify(Node.byHex(char.currentNode).name + " introduced you to " + node.name + ", " + node.quickdesc + " at hex " + str(node.hex) + ".")
+                    char.notify(Node.byHex(char.currentNode).name + " introduced you to " + node.name + ", " + node.quickdesc + ".")
                     node.notifyWatchers(char, "was introduced to") 
                 else:
-                    flash("You need more Market points to unlock this node!")
+                    flash("You need more Market points to arrange that introduction!")
                     raise turbogears.redirect('/')
 
         char.currentNode = node.hex
@@ -98,7 +98,7 @@ class Root(controllers.RootController):
         neighbors.north = Root.neighborstat(self, Dir.north, root)
         # Warning: below syntax requires Python 2.5
         neighbors.northeast = Root.neighborstat(self, Dir.northeast , root)
-        neighbors.southeast = Root.neighborstat(self, (node.hex + 101 if node.hex % 2 else node.hex + 1), root)
+        neighbors.southeast = Root.neighborstat(self, Dir.southeast, root)
         neighbors.south = Root.neighborstat(self, Dir.south, root)
         neighbors.southwest = Root.neighborstat(self, Dir.southwest, root)
         neighbors.northwest = Root.neighborstat(self, Dir.northwest, root)
@@ -237,7 +237,7 @@ class Root(controllers.RootController):
 
     @expose()
     def notfound(self, title):
-        flash("The node %s was not found." % title)
+        flash("The merchant %s was not found." % title)
         raise turbogears.redirect("/")
 
 #    @expose()
@@ -252,10 +252,10 @@ class Root(controllers.RootController):
             l = "<a href=\"" + root + str(node.hex) + "/" + "\">"
             if ((not Character.byName(turbogears.identity.current.user.character).hasNode(node)) and (node.hex != startNode)):
 
-                n = node.name + ", " + n + ". [Locked" 
+                n = node.name + ", " + n + ". <small>[Locked" 
                 if Character.byName(turbogears.identity.current.user.character).points > 0:
                     n += " - " + l + "Spend 1 Market to introduce me</a>"
-                n += "]"    
+                n += "]</small>"    
                 
             else:
                 n = l + node.name + "</a>, " + node.quickdesc + "."
@@ -290,27 +290,27 @@ class Root(controllers.RootController):
 #         if (baz == 2):
 #        char = Character.byName(turbogears.identity.current.user.character)
 
-    def cardcatalogp(self, title):
-        char = Character.byName(turbogears.identity.current.user.character)
-	print str(char) + " " + title
-        baz = 0
-        result = CardCatalog.select(CardCatalog.q.title == title)
-        for item in result:
-            if (turbogears.identity.current.user.character == item.name):
-                baz = 2
-        if (baz == 2):
-	    print "approved"
-            return "approved"
-        else:
-            print "not approved"
-            return "not approved"
+#     def cardcatalogp(self, title):
+#         char = Character.byName(turbogears.identity.current.user.character)
+# 	print str(char) + " " + title
+#         baz = 0
+#         result = CardCatalog.select(CardCatalog.q.title == title)
+#         for item in result:
+#             if (turbogears.identity.current.user.character == item.name):
+#                 baz = 2
+#         if (baz == 2):
+# 	    print "approved"
+#             return "approved"
+#         else:
+#             print "not approved"
+#             return "not approved"
 
-    def shortcuts(self):
-        retval = "<a href=\"" + turbogears.url("/") + "\">Start Page</a><br/>"
-        result = Shortcut.select(Shortcut.q.name == turbogears.identity.current.user.character)
-        for item in result:
-            retval = retval + "<a href=\"" + turbogears.url("/%s" % item.title) + "\">" + item.title + "</a><br/>"
-        return retval
+#     def shortcuts(self):
+#         retval = "<a href=\"" + turbogears.url("/") + "\">Start Page</a><br/>"
+#         result = Shortcut.select(Shortcut.q.name == turbogears.identity.current.user.character)
+#         for item in result:
+#             retval = retval + "<a href=\"" + turbogears.url("/%s" % item.title) + "\">" + item.title + "</a><br/>"
+#         return retval
                                               
   
 
@@ -320,17 +320,17 @@ class Root(controllers.RootController):
         return len(list(sel))
 
 
-    def shortcutp(self, name, title):
-        baz = 0
-        result = Shortcut.select(Shortcut.q.title == title)
-        for item in result:
-            if (name == item.name):
-                # baz = 2 means we have a shortcut for this node
-                baz = 2
-        if (baz == 2):
-            return "exists"
-        else:
-            return "does not exist"
+#     def shortcutp(self, name, title):
+#         baz = 0
+#         result = Shortcut.select(Shortcut.q.title == title)
+#         for item in result:
+#             if (name == item.name):
+#                 # baz = 2 means we have a shortcut for this node
+#                 baz = 2
+#         if (baz == 2):
+#             return "exists"
+#         else:
+#             return "does not exist"
 
 #    def shortcutp(self, name, title):
 #        baz = 0
@@ -352,49 +352,48 @@ class Root(controllers.RootController):
 #        else:
 #            return "does not exist"
 
-
-    @expose(template="archives.templates.librarian")
-    @identity.require(identity.not_anonymous())
-    def librarian(self, title):
-        return dict(title=title)
+#     @expose(template="archives.templates.librarian")
+#     @identity.require(identity.not_anonymous())
+#     def librarian(self, title):
+#         return dict(title=title)
     
-    @expose()
-    @identity.require(identity.not_anonymous())
-    def shortcut(self, targetname, targetnode, submit):
+#     @expose()
+#     @identity.require(identity.not_anonymous())
+#     def shortcut(self, targetname, targetnode, submit):
 
-        char = Character.byName(turbogears.identity.current.user.character)        
-        try:
-            targetchar = Character.byName(targetname)
-        except SQLObjectNotFound:
-            flash("We couldn't find the character %s!" % targetname)
-            raise turbogears.redirect("/librarian?title=%s" % targetnode)
+#         char = Character.byName(turbogears.identity.current.user.character)        
+#         try:
+#             targetchar = Character.byName(targetname)
+#         except SQLObjectNotFound:
+#             flash("We couldn't find the character %s!" % targetname)
+#             raise turbogears.redirect("/librarian?title=%s" % targetnode)
         
-        try:
-            node = Node.byName(targetnode)
-        except SQLObjectNotFound:
-            flash("We couldn't find the node %s! How did you get this message?" % targetnode)
-            raise turbogears.redirect("/")
+#         try:
+#             node = Node.byName(targetnode)
+#         except SQLObjectNotFound:
+#             flash("We couldn't find the node %s! How did you get this message?" % targetnode)
+#             raise turbogears.redirect("/")
 
-        if (Root.cardcatalogp(self, targetnode) != "approved"):
-            flash("You don't have access to grant other people access to %s!" % targetnode)
-            raise turbogears.redirect("/")
+#         if (Root.cardcatalogp(self, targetnode) != "approved"):
+#             flash("You don't have access to grant other people access to %s!" % targetnode)
+#             raise turbogears.redirect("/")
 
-        if (Root.shortcutp(self, targetname, targetnode) == "exists"):
-            n = targetname + " already has access to " + targetnode + "!"
-            flash(n)
-            raise turbogears.redirect("/")
+#         if (Root.shortcutp(self, targetname, targetnode) == "exists"):
+#             n = targetname + " already has access to " + targetnode + "!"
+#             flash(n)
+#             raise turbogears.redirect("/")
 
-        # OK, now we can make the damned shortcut
-#        if (char.inspiration > 0):
-#        char.inspiration = char.inspiration - 1
-        shortcut = Shortcut(name=targetname, title=targetnode)
-        #else:
-        #    n = "You need more inspiration to grant " + char + " access to " + targetnode + "!"
-        #    flash(n)
-        #    raise turbogears.redirect('/')
+#         # OK, now we can make the damned shortcut
+# #        if (char.inspiration > 0):
+# #        char.inspiration = char.inspiration - 1
+#         shortcut = Shortcut(name=targetname, title=targetnode)
+#         #else:
+#         #    n = "You need more inspiration to grant " + char + " access to " + targetnode + "!"
+#         #    flash(n)
+#         #    raise turbogears.redirect('/')
         
-        flash("Access granted!")
-        raise turbogears.redirect("/")
+#         flash("Access granted!")
+#         raise turbogears.redirect("/")
 
     @expose()
     def logout(self):
@@ -467,15 +466,19 @@ class Root(controllers.RootController):
     @identity.require(identity.not_anonymous())
     def map(self):
         char = Character.byName(turbogears.identity.current.user.character)
-        nodes = {startNode: Node.byHex(startNode).name}
+        thenode = Node.byHex(char.currentNode)
+        nodes = {startNode: {"name": Node.byHex(startNode).name, "desc": Node.byHex(startNode).oneword}}
         for entry in char.nodes: #Browsing.select(Browsing.q.character == char.name):
-            nodes[entry.hex] = Node.byHex(entry.hex).name
+            nodes[entry.hex] = {"name": Node.byHex(entry.hex).name, "desc": Node.byHex(entry.hex).oneword}
         gridMap.setNodes(nodes)
         gridMap.setName(char.name)
+        gridMap.setDrawDesc(0)
+        gridMap.setDrawNumbers(0)
         gridMap.save("archive/static/images/map" + char.name + ".svg")
         os.spawnlp(os.P_WAIT, "convert", "", "archive/static/images/map"+char.name+".svg", "archive/static/images/map"+char.name+".png")
         map = "<img src='static/images/map"+char.name+".png' />"
-        return dict(map=map, backstr="/"+str(char.currentNode))
+        goback = "<a href='/"+str(thenode.hex)+"'>Go back to " + thenode.name + ".</a>"
+        return dict(map=map, goback=goback)
         
 
     @expose(template="archives.templates.map")
@@ -484,9 +487,11 @@ class Root(controllers.RootController):
         char = Character.byName(turbogears.identity.current.user.character)
         nodes = {}#{startNode: Node.byHex(startNode).name}
         for entry in Node.select(Node.q.name != ""): #Browsing.select(Browsing.q.character == char.name):
-            nodes[entry.hex] = Node.byHex(entry.hex).name
+            nodes[entry.hex] = {"name":Node.byHex(entry.hex).name, "desc": Node.byHex(entry.hex).oneword}
         gridMap.setNodes(nodes)
         gridMap.setName(char.name)
+        gridMap.setDrawDesc(1)
+        gridMap.setDrawNumbers(1)
         gridMap.save("archive/static/images/map" + char.name + ".svg")
         os.spawnlp(os.P_WAIT, "convert", "", "archive/static/images/map"+char.name+".svg", "archive/static/images/map"+char.name+".png")
         map = "<img src='static/images/map"+char.name+".png' />"
@@ -528,7 +533,7 @@ class Root(controllers.RootController):
         char.notify("You bought " + theitem.name + " from " + thenode.name + " at " + str(thenode.hex) + " for " + str(thecost) + ".")
         thenode.notifyWatchers(char, "bought " + theitem.name + " from")
         char.wealth -= thecost
-        goback = "<a href='/"+thehex+"'>Go back to the node.</a>"
+        goback = "<a href='/"+thehex+"'>Go back to " + thenode.name + ".</a>"
         return dict(item=theitem, cost=thecost, goback=goback)
 
     @expose(template="archives.templates.buyrumor")
@@ -555,7 +560,7 @@ class Root(controllers.RootController):
             therumor.removeNode(thenode)
         thenode.popRumors()
         
-        goback = "<a href='/"+thehex+"'>Go back to the node.</a>"
+        goback = "<a href='/"+thehex+"'>Go back to " + node.name + ".</a>"
         return dict(node=thenode, rumor=therumor, goback=goback)
 
 
@@ -564,13 +569,81 @@ class Root(controllers.RootController):
     def password(self, thepass, submit=None):
         char = Character.byName(turbogears.identity.current.user.character)
         thenode = Node.byHex(char.currentNode)
+        found = False
         
-        if (thepass != thenode.password): 
+        if thenode.deaduntil > today():
+            flash("There's nobody there to talk to!")
+            raise turbogears.redirect("/"+str(thenode.hex))
+        
+        for secret in thenode.secrets:
+            if secret.password == thepass:
+                found = True
+                thenode.notifyWatchers(char, "whispered something to")
+                if secret.moneycost != 0 or secret.othercost != "":
+                    raise turbogears.redirect("/req/"+str(secret.id))
+                else: 
+                    pwstring = thenode.name + " says: <blockquote>" + secret.passtext + "</blockquote>"
+                    char.notify(thenode.name + " told you a secret:<br/>"+secret.passtext)
+                    thenode.notifyWatchers(char, " heard a secret from ")
+        
+        if (not found): 
             pwstring = thenode.name + " gives you a funny look."
-        else:
-            pwstring = thenode.passtext
-        goback = "<a href='/"+str(char.currentNode)+"'>Go back to the node.</a>"
+        goback = "<a href='/"+str(thenode.hex)+"'>Go back to " + thenode.name + ".</a>"
         return dict(pwstring=pwstring, goback=goback)
+
+    @expose(template="archives.templates.password")
+    @identity.require(identity.not_anonymous())
+    def reveal(self, id, submit=None):
+        char = Character.byName(turbogears.identity.current.user.character)
+        thenode = Node.byHex(char.currentNode)
+        thesecret = Secret.get(id)
+        pwstring = thenode.name + "looks around furtively, then says:<blockquote>" + thesecret.passtext + "</blockquote>"
+        char.notify(thenode.name + " told you a secret:<br/>"+thesecret.passtext)
+        thenode.notifyWatchers(char, " heard a secret from ")
+        goback = "<a href='/"+str(thenode.hex)+"'>Go back to " + thenode.name + ".</a>"
+        return dict(pwstring=pwstring, goback=goback)
+
+    @expose(template="archives.templates.req")
+    @identity.require(identity.not_anonymous())
+    def req(self, secretid):
+        char = Character.byName(turbogears.identity.current.user.character)
+        thenode = Node.byHex(char.currentNode)
+        thesecret = Secret.get(secretid)
+        pwstring = thenode.name + " says, \"I know what you're talking about, but...<br/>"
+        if (thesecret.moneycost > 0):
+            if (char.wealth < thesecret.moneycost):
+                pwstring += "<p>I'll need some compensation for my trouble.  Pay me " + str(thesecret.moneycost) + " debens. [<i>You can't afford it.</i>]</p>"  
+            else:
+                pwstring += "<p>I'll need some compensation for my trouble. <a href='/secretpay/"+str(secretid)+"'>Pay me " + str(thesecret.moneycost) + " debens</a>.</p>"  
+        if (thesecret.othercost != ""):
+            pwstring += "<p>I'll "
+            if (thesecret.moneycost > 0):
+                pwstring += "also "
+            pwstring += "need you to do the following: <blockquote>" + str(thesecret.othercost) + "</blockquote></p>"
+        pwstring += "<p>Once you have "
+        if (thesecret.moneycost > 0):
+            pwstring += "paid me"
+            if (thesecret.othercost):
+                pwstring += " and "
+        if (thesecret.othercost):
+            pwstring += "done what I asked"
+        pwstring += ", <a href='/reveal/"+str(secretid) + "'>click here</a>.\"</p>"
+        print pwstring
+        goback = "<a href='/"+str(thenode.hex)+"'>Go back to " + thenode.name + ".</a>"
+        return dict(pwstring=pwstring, goback=goback)
+
+    @expose()
+    @identity.require(identity.not_anonymous())
+    def secretpay(self, secretid):
+        char = Character.byName(turbogears.identity.current.user.character)
+        thenode = Node.byHex(char.currentNode)
+        thesecret = Secret.get(secretid)
+        char.wealth -= thesecret.moneycost
+        thenode.notifyWatchers(char, "slipped some money to")
+        nstr = "You paid " + thenode.name + " " + str(thesecret.moneycost) + " to learn a secret."
+        char.notify(nstr)
+        flash(nstr)
+        raise(turbogears.redirect("/req/"+str(secretid)))
 
     @expose(template="archives.templates.transfer")
     @identity.require(identity.not_anonymous())
@@ -664,11 +737,17 @@ class Root(controllers.RootController):
                 raise turbogears.redirect("/"+str(char.currentNode))
             
             if (len(char.watching) >= char.marketstat):
-                watchstr = ""
-                for wp in char.watching:
-                    watchstr += wp.hex + " "
-                    flash("You have no agents left!Try removing some first.")
-                    raise turbogears.redirect("/"+str(char.currentNode))
+                flash("You have no agents left! Try removing some first.")
+                raise turbogears.redirect("/"+str(char.currentNode))
+
+            if len(list(Interaction.select(AND(Interaction.q.character == char.name,
+                                               Interaction.q.day == today(),
+                                               Interaction.q.item.startswith("AGENT"))))) > 0:
+                flash("You must wait until tomorrow to assign another agent.")
+                raise turbogears.redirect("/"+str(char.currentNode))
+                                                   
+
+            inter = Interaction(character=char.name, day=today(), node=777, item="AGENT")
                 
             char.addWatchedNode(node)
             flash("Agent set.")

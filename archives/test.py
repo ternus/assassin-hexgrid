@@ -28,7 +28,9 @@ os.remove("./" + filename)
 ## Next, we'll generate an example user-visible map (gridtest.png)
 
 gridMap.setDrawAll(0)
-nodes = {215:"Achmed",214:"Bob",113:"Joe",112:"Fred",217:"Alice",314:"Quux"}
+gridMap.setDrawNumbers(1)
+gridMap.setDrawDesc(1)
+nodes = {215:{"name":"Achmed","desc":"u.alchem"},214:{"name":"Bob","desc":"heroin"}}#,113:"Joe",112:"Fred",217:"Alice",314:"Quux"}
 gridMap.setNodes(nodes)
 
 

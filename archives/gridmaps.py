@@ -64,13 +64,18 @@ class grid:
 		self.type = type
 		self.nodes = {}
 		self.drawAll = 0
+		self.drawDesc = 0
+		self.drawNumbers = 0
 		self.name = "Character"
 
 	def setName(self, val):
 		self.name = val
-
+	def setDrawNumbers(self,val):
+		self.drawNumbers = val
 	def setDrawAll(self,val):
 		self.drawAll = val
+	def setDrawDesc(self,val):
+		self.drawDesc = val
 
 	def setNodes(self,nodes):
 		self.nodes = nodes
@@ -253,12 +258,26 @@ class grid:
 
 					if (nodeID in self.nodes) or (self.drawAll):
 						gridshape = hexagon(gridsize, polyLeft, polyTop, self.units, stroke=lineColor, fill=fillColor, stroke_width=penWidth)
-						gridtext = SVGdraw.text(90 * (polyLeft + partHeight - .1), 90 * (polyTop + partHeight - .1),str(polyColumn)+str(polyRow),font_size=9);
-						canvas.addElement(gridtext)
+						if self.drawNumbers:
+							if (polyRow < 10):
+								polyRowStr = "0" + str(polyRow)
+							else:
+								polyRowStr = str(polyRow)
+							gridtext = SVGdraw.text(90 * (polyLeft + partHeight - .10), 90 * (polyTop + partHeight - .15),str(polyColumn)+polyRowStr,font_size=11);
+							canvas.addElement(gridtext)
 						canvas.addElement(gridshape)
 						if nodeID in self.nodes:
-							gridtext2 = SVGdraw.text(90 * (polyLeft + partHeight - .1), 90 * (polyTop + partHeight + .08),self.nodes[nodeID],font_size=9);
-							canvas.addElement(gridtext2)
+							if self.drawDesc:
+								gridname = SVGdraw.text(90 * (polyLeft + partHeight - .16), 90 * (polyTop + partHeight + .13),self.nodes[nodeID]["name"],font_size=9);
+								canvas.addElement(gridname)
+
+								griddesc = SVGdraw.text(90 * (polyLeft + partHeight - .2), 90 * (polyTop + partHeight + .02),self.nodes[nodeID]["desc"],font_size=8);
+								canvas.addElement(griddesc)
+							else:
+								gridname = SVGdraw.text(90 * (polyLeft + partHeight - .16), 90 * (polyTop + partHeight + .02),self.nodes[nodeID]["name"],font_size=12);
+								canvas.addElement(gridname)
+
+
 
 				else:
 					gridshape = SVGdraw.rect(polyLeftStr, polyTopStr, polySize, polySize, stroke=lineColor, fill=fillColor, stroke_width=penWidth)
