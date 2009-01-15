@@ -8,7 +8,7 @@
 <body>
   <div class="main_content">
     <h1>Notifications</h1>
-    <p><a href="/">Return to the main page.</a></p>
+    <p><a href="/">Return to the Bazaar.</a> <span py:replace"XML(goback)">foo</span></p>
     <ul>
       <span py:replace="XML(notifications)">Foo.</span>
     </ul>

@@ -535,7 +535,8 @@ class Root(controllers.RootController):
                     notf.new = False
                 
                 notwad += notf.text + "</li>"
-        return dict(notifications=notwad)
+        goback = "<a href='/"+str(thenode.hex)+"'>Go back to " + thenode.name + ".</a>"
+        return dict(notifications=notwad, goback=goback)
 
 
     @expose(template="archives.templates.buy")
