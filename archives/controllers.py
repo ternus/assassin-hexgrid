@@ -525,6 +525,7 @@ class Root(controllers.RootController):
     @identity.require(identity.not_anonymous())
     def notifications(self):
         char = Character.byName(turbogears.identity.current.user.character)
+        thenode = Node.byHex(char.currentNode)
         nots = Notification.select(Notification.q.charname == char.name, orderBy=DESC(Notification.q.id))
         notwad = ""
         for notf in nots:
