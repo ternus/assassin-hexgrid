@@ -11,7 +11,7 @@
     <i>Remember that this map is not in game!  Do not share it with anyone.</i><br/>
     <!-- <a href="javascript: history.go(-1)">Go back</a>.<p/>-->
 	 <a href="/">Return to Bazaar</a>
-	 <span py:replace="XML(goback)">error</span>
+	 <span py:if="len(character.nodes) > 0 or character.marketstat > 0" py:replace="XML(goback)">error</span>
 
     <span py:replace="XML(map)">Image </span>
   </div>
