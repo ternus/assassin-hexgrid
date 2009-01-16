@@ -43,7 +43,19 @@ class Node(SQLObject):
     rumorsatonce = IntCol()
     rumorsperday = IntCol()
     secrets = RelatedJoin("Secret", joinColumn="hex_id", intermediateTable="node_secret")
+
     
+
+    def getDesc(self):        
+        if self.deaduntil > today():
+            return self.quickdesc + " [KILLED!]"
+        else: return self.quickdesc
+
+    def getText(self):
+        if self.deaduntil > today():
+            return "This merchant lies brutally slain!"
+        else: return self.text
+
     def rumorsSoldToday(self):
         return len(list(Interaction.select(AND(Interaction.q.day == today(), 
                                                Interaction.q.node == self.hex,
@@ -87,12 +99,14 @@ class Node(SQLObject):
 
                     if self.rumorsToday() >= self.rumorsperday: 
                         return
-            print "Incrementing counter"
             counter += 1
             
 
     def isStart(self):
         return self.hex == startNode
+
+    def isDead(self):
+        return (not self.deaduntil < today())
 
     def neighbor(self, dir):
         try:
@@ -163,13 +177,17 @@ class Node(SQLObject):
         for node in three:
             for char in node.watchers:
                 threelist += [char]
-        nstring = "Your agent at " + self.name + "(" + str(self.hex) + ") tells you:<p>"
+        nstring = "Your agent at " + self.name + "(" + str(self.hex) + ") tells you:<br/>"
         notified = [who] #don't notify someone of what they're doing
         for char in self.watchers:
             if char in notified:
                 continue
             if (random() > 1.0/3):
-                char.notify(nstring + who.getName() + " " + what + " " + self.name + ".</p>")
+                if who.isdisguised:
+                    nstring += "A mysterious figure "
+                else:
+                    nstring += who.getName() + " "
+                char.notify(nstring + what + " " + self.name + ".")
                 notified += [char]
             else:
                 twolist += [char]
@@ -178,10 +196,13 @@ class Node(SQLObject):
                 if char in notified:
                     continue
                 if char in self.watchers or random() > 1.0/3:
-                    nstring = "Your agent at " + node.name + "(" + str(node.hex) + ") tells you:<br/>"
+                    nstring = "Your agent at " + node.name + " tells you:<br/>"
                     got = sample(info, 2)
                     if "who" in got:
-                        nstring += who.getName() + " "
+                        if who.isdisguised:
+                            nstring += "A mysterious figure "
+                        else:
+                            nstring += who.getName() + " "
                     else:
                         nstring += "Someone "
                     if "what" in got:
@@ -201,10 +222,13 @@ class Node(SQLObject):
                 if char in notified:
                     continue
                 if char in twolist or random() > 1.0/3:
-                    nstring = "Your agent at " + node.name + "(" + str(node.hex) + ") tells you:<br/>"
+                    nstring = "Your agent at " + node.name + " tells you:<br/>"
                     got = sample(info, 1)
                     if "who" in got:
-                        nstring += who.getName() + " "
+                        if who.isdisguised:
+                            nstring += "A mysterious figure "
+                        else:
+                            nstring += who.getName() + " "
                     else:
                         nstring += "Someone "
                     if "what" in got:

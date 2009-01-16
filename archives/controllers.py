@@ -9,6 +9,7 @@ from sqlobject import SQLObjectNotFound
 import gridmaps, os
 from datetime import *
 import hashlib
+from random import random
 
 from archives import json
 # import logging
@@ -66,12 +67,17 @@ class Root(controllers.RootController):
 #                 flash("You haven't satisfied the requirements to go to that page!")
 #                 raise turbogears.redirect('/')
             if not char.hasHex(hex):
-                if (hexjump == 1):
-                    flash("You haven't visited that page normally yet!")
+                found = 0
+                for nb in node.getAllNeighbors():
+                    if nb in char.nodes or nb.isStart():
+                        found = 1
+                        break
+                if not found and not "admin" in identity.current.groups:
+                    flash("You haven't been introduced to that merchant yet!")
                     raise turbogears.redirect('/')
-                if (char.points > 0):
+                if (char.points > 0) and not "admin" in identity.current.groups:
                     
-                    flash(Node.byHex(char.currentNode).name + " introduces you to " + node.name + ".")
+                    flash(nb.name + " introduces you to " + node.name + ".")
                     char.points -= 1
                     char.addNode(node)
                     interaction = Interaction(character=char.name,
@@ -80,7 +86,7 @@ class Root(controllers.RootController):
                                               item = "none")
                     char.notify(Node.byHex(char.currentNode).name + " introduced you to " + node.name + ", " + node.quickdesc + ".")
                     node.notifyWatchers(char, "was introduced to") 
-                else:
+                elif (char.points == 0) and not "admin" in identity.current.groups:
                     flash("You need more Market points to arrange that introduction!")
                     raise turbogears.redirect('/')
 
@@ -120,6 +126,8 @@ class Root(controllers.RootController):
         if (neighborwad != ""):
             neighborwad = "<p>I know these people:</p><ul>" + neighborwad + "</ul>"
 
+
+
         buystrings = [". %d deben is the lowest I can go!",
                       ", a steal at only %d deben!",
                       ". %d deben, cheap at twice the price!",
@@ -138,37 +146,39 @@ class Root(controllers.RootController):
                       ". %d deben, buy it or lose it!"]
 
         itemwad = ""
-        for item in node.forsale:
-            itemwad += "<li>" + item.name
-            itemwad += buystrings[int(hashlib.md5(item.name).hexdigest()[0], 16)] % item.realcost() # don't worry about it
-            if item.realcost() <= char.wealth:
-                # : " + str(item.realcost()) + " deben
-                itemwad += " [<a href=\'/buy/"+str(node.hex)+"/"+str(item.id)+"'>BUY</a>]"
-            else:
-                # : " + str(item.realcost()) + " deben
-                itemwad += " [too expensive]"
-            itemwad += "</li>"
-        if itemwad != "":
-            itemwad = "<p>I have these items for sale:</p><ul>" + itemwad + "</ul>"
+        if (node.deaduntil <= today()): 
+            for item in node.forsale:
+                itemwad += "<li>" + item.name
+                itemwad += buystrings[int(hashlib.md5(item.name).hexdigest()[0], 16)] % item.realcost() # don't worry about it
+                if item.realcost() <= char.wealth:
+                    # : " + str(item.realcost()) + " deben
+                    itemwad += " [<a href=\'/buy/"+str(node.hex)+"/"+str(item.id)+"'>BUY</a>]"
+                else:
+                    # : " + str(item.realcost()) + " deben
+                    itemwad += " [too expensive]"
+                itemwad += "</li>"
+            if itemwad != "":
+                itemwad = "<p>I have these items for sale:</p><ul>" + itemwad + "</ul>"
 
         notif = ""
         newnot = self.newnotifyp()
         if (newnot):
-            notif = "<div style=\"color:red\">[" + str(newnot) + " NEW]</div>"
+            notif = " <span style=\"color:red\">[" + str(newnot) + " NEW]</span>"
         else:
             notif = ""
 
         rumorwad = ""
-        for rumor in node.info:
-            if rumor.valid and rumor.visible:
-                rumorwad += "<li>" + rumor.subject
-                if rumor.cost <= char.wealth:
-                    rumorwad += " [<a href=\'/rumor/"+str(node.hex)+"/"+str(rumor.id)+"'>BUY</a>: " + str(rumor.cost) + " deben]"
-                else:
-                    rumorwad += " [too expensive]"
-            rumorwad += "</li>"
-        if rumorwad != "":
-            rumorwad = "<p>I have heard rumors about these subjects:</p><ul>" + rumorwad + "</ul>"
+        if (node.deaduntil <= today()): 
+            for rumor in node.info:
+                if rumor.valid and rumor.visible:
+                    rumorwad += "<li>" + rumor.subject
+                    if rumor.cost <= char.wealth:
+                        rumorwad += " [<a href=\'/rumor/"+str(node.hex)+"/"+str(rumor.id)+"'>BUY</a>: " + str(rumor.cost) + " deben]"
+                    else:
+                        rumorwad += " [too expensive]"
+                rumorwad += "</li>"
+            if rumorwad != "":
+                rumorwad = "<p>I have heard rumors about these subjects:</p><ul>" + rumorwad + "</ul>"
         
 
 
@@ -188,6 +198,15 @@ class Root(controllers.RootController):
         
         for wnode in char.watching:
             watched += "<a href='/"+str(wnode.hex)+"'>"+wnode.name+"</a><br/>"
+        
+        nodelist = "<form><select onchange=\"if (this.selectedIndex > 0) location.href=this[this.selectedIndex].value;\"><option>Visit Merchant</option>"
+        nodelist += "<OPTION VALUE=\"/\">" + Node.byHex(startNode).name +"</OPTION>"
+        for xnode in char.nodes:
+                nodelist += "<OPTION VALUE=\"/" + str(xnode.hex) + "\">"+xnode.name+"</OPTION>"
+        nodelist += "</select></form>"
+
+        if char.marketstat == 0 and char.points == 0:
+            neighborwad = " "
 
 
 #         try:
@@ -207,10 +226,12 @@ class Root(controllers.RootController):
 
 #        shortcuts = Root.shortcuts(self)
 
-        
+        if node.deaduntil > today():
+            html_text = "This merchant lies brutally slain!"
 
         return dict(text=html_text, 
                     node=node, 
+                    nodelist=nodelist,
                     character=char, 
                     root=root, 
                     neighbors = neighbors, 
@@ -428,6 +449,7 @@ class Root(controllers.RootController):
     @identity.require(identity.not_anonymous())
     def points(self):
         char = Character.byName(turbogears.identity.current.user.character)
+
         return dict(char=char)
 
 
@@ -444,8 +466,36 @@ class Root(controllers.RootController):
 
 
 
+    @expose()
+    @identity.require(identity.in_group("admin"))
+    def kill(self, char, hex, disguised, submit=None):
+        print disguised
+        char = Character.get(char)
+        thenode = Node.byHex(hex)
+        thenode.deaduntil = today() + 2
+        if (disguised == "1"):
+            char.isdisguised = True
+        thenode.notifyWatchers(char, " brutally murdered ")
+        if (disguised == "1"):
+            char.isdisguised = False
+        flash("Done...")
+        raise turbogears.redirect("/")
+        
+
+
+    @expose(template="archives.templates.gm")
+    @identity.require(identity.in_group("admin"))
+    def gm(self):
+        charlist =""
+        nodelist =""
+        for char in Character.select(NOT(Character.q.name.startswith("admin"))):
+                charlist += "<OPTION VALUE=\"" + str(char.id) + "\">"+char.name+"</OPTION>"
+        for node in Node.select(orderBy=Node.q.name):
+                nodelist += "<OPTION VALUE=\"" + str(node.hex) + "\">"+node.name+"</OPTION>"
+        return dict(charlist=charlist, nodelist=nodelist)
+
     @expose(template="archives.templates.tick")
-#    @identity.require(identity.in_group("admin"))
+    @identity.require(identity.in_group("admin"))
     def tick(self):
         date = str(Interaction.get(1).date)
         char = Character.byName(turbogears.identity.current.user.character)
@@ -454,32 +504,10 @@ class Root(controllers.RootController):
     @expose()
     @identity.require(identity.in_group("admin"))
     def advancetime(self, submit):
-        day = today()
-        chars = Character.select(Character.q.marketstat >= 1)
-        for char in chars:
-            char.notify("The sun sets.  You gain " + str(char.marketstat) + " Market Points and " + str(char.incomestat) + " Wealth.")
-            char.points += char.marketstat
-            char.wealth += char.incomestat
-            for node in char.nodes:
-                inters = Interaction.select(AND(Interaction.q.node == node.hex, Interaction.q.character == char.name), orderBy=DESC(Interaction.q.day))
-                mostRecent = list(inters)[0].day
-                if (today() >= mostRecent + maxNodeAge):
-                    char.notify(node.name + " expired due to inactivity!")
-                    char.removeNode(node)
-                    print "Removed node " + node.name + " from char " + char.name
-                    if node in char.watching:
-                        char.removeWatchedNode(node)
-                        char.notify("You are no longer watching " + node.name + ".")
-                    
-                    
+        self.autotick()
+        flash("* * * T I C K * * *")
+        raise turbogears.redirect("/")
 
-        for node in Node.select(Node.q.rumorsperday > 0):
-            node.popRumors()
-                                
-        Interaction.get(1).day += 1
-        Interaction.get(1).date = datetime.now()
-        print chars
-        return dict(chars=chars)
                                               
 
     @expose(template="archives.templates.map")
@@ -498,7 +526,29 @@ class Root(controllers.RootController):
         os.spawnlp(os.P_WAIT, "convert", "", "archive/static/images/map"+char.name+".svg", "archive/static/images/map"+char.name+".png")
         map = "<img src='static/images/map"+char.name+".png' />"
         goback = "<a href='/"+str(thenode.hex)+"'>Go back to " + thenode.name + ".</a>"
+        return dict(map=map, goback=goback, character=char)
+
+    @expose(template="archives.templates.map")
+    @identity.require(identity.in_group("admin"))
+    def gmmap(self, theid, a=None, b=None):
+        if theid:
+            char = Character.get(theid)
+        thenode = Node.byHex(char.currentNode)
+        nodes = {startNode: {"name": Node.byHex(startNode).name, "desc": Node.byHex(startNode).oneword}}
+        for entry in char.nodes: #Browsing.select(Browsing.q.character == char.name):
+            nodes[entry.hex] = {"name": Node.byHex(entry.hex).name, "desc": Node.byHex(entry.hex).oneword}
+        gridMap.setNodes(nodes)
+        gridMap.setName(char.name)
+        gridMap.setDrawDesc(0)
+        gridMap.setDrawNumbers(0)
+        gridMap.save("archive/static/images/map" + char.name + ".svg")
+        os.spawnlp(os.P_WAIT, "convert", "", "archive/static/images/map"+char.name+".svg", "archive/static/images/map"+char.name+".png")
+        map = "<img src='/static/images/map"+char.name+".png' />"
+        goback = "<a href='/gm'>Go back to GM Panel.</a>"
         return dict(map=map, goback=goback)
+        
+
+
         
 
     @expose(template="archives.templates.map")
@@ -537,7 +587,7 @@ class Root(controllers.RootController):
                 
                 notwad += notf.text + "</li>"
         goback = "<a href='/"+str(thenode.hex)+"'>Go back to " + thenode.name + ".</a>"
-        return dict(notifications=notwad, goback=goback)
+        return dict(notifications=notwad, goback=goback, character=char)
 
 
     @expose(template="archives.templates.buy")
@@ -807,3 +857,34 @@ class Root(controllers.RootController):
 
         flash("Character reset!")
         raise turbogears.redirect("/")
+
+    def autotick(self):
+        day = today()
+        chars = Character.select()
+        for char in chars:
+            if char.marketstat:
+                char.notify("The sun rises.  You gain " + str(char.marketstat) + " Market Points and " + str(char.incomestat) + " deben.")
+            else:
+                char.notify("The sun rises.  You gain " + str(char.incomestat) + " deben.")
+
+            char.points = char.marketstat
+            char.wealth += char.incomestat
+            for node in char.nodes:
+                inters = Interaction.select(AND(Interaction.q.node == node.hex, Interaction.q.character == char.name), orderBy=DESC(Interaction.q.day))
+                mostRecent = list(inters)[0].day
+                if (today() >= mostRecent + maxNodeAge):
+                    if node in char.watching:
+                        continue
+                    if (today() == mostRecent + maxNodeAge and random() < .5):
+                        continue
+                    char.notify("Since you haven't bought anything in " + str(today() - mostRecent) + " days, " + node.name + " has broken off your business relationship.")
+                    char.removeNode(node)
+                    print "Removed node " + node.name + " from char " + char.name
+                elif (today() >= mostRecent + maxNodeAge - 1):
+                    char.notify(node.name + " tells you, \"If you don't buy something from me, I may decide your business just isn't worth the trouble.\"")
+
+        for node in Node.select(Node.q.rumorsperday > 0):
+            node.popRumors()
+                                
+        Interaction.get(1).day += 1
+        Interaction.get(1).date = datetime.now()
