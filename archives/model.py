@@ -474,17 +474,20 @@ def autotick():
         char.wealth += char.incomestat
         for node in char.nodes:
             inters = Interaction.select(AND(Interaction.q.node == node.hex, Interaction.q.character == char.name), orderBy=DESC(Interaction.q.day))
-            mostRecent = list(inters)[0].day
-            if (today() >= mostRecent + maxNodeAge):
-                if node in char.watching:
-                    continue
-                if (today() == mostRecent + maxNodeAge and random() < .5):
-                    continue
-                char.notify("Since you haven't bought anything in " + str(today() - mostRecent) + " days, " + node.name + " has ended your business relationship.")
+            if (len(list(inters))):
+                mostRecent = list(inters)[0].day
+                if (today() >= mostRecent + maxNodeAge):
+                    if node in char.watching:
+                        continue
+                    if (today() == mostRecent + maxNodeAge and random() < .5):
+                        continue
+                    char.notify("Since you haven't bought anything in " + str(today() - mostRecent) + " days, " + node.name + " has ended your business relationship.")
+                    char.removeNode(node)
+                    print "Removed node " + node.name + " from char " + char.name
+                elif (today() >= mostRecent + maxNodeAge - 1):
+                    char.notify(node.name + " tells you, \"If you don't buy something from me, I may decide your business just isn't worth the trouble.\"")
+            else:
                 char.removeNode(node)
-                print "Removed node " + node.name + " from char " + char.name
-            elif (today() >= mostRecent + maxNodeAge - 1):
-                char.notify(node.name + " tells you, \"If you don't buy something from me, I may decide your business just isn't worth the trouble.\"")
 
     for node in Node.select(Node.q.rumorsperday > 0):
         node.popRumors()
