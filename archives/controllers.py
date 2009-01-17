@@ -86,6 +86,7 @@ class Root(controllers.RootController):
                                               item = "none")
                     char.notify(Node.byHex(char.currentNode).name + " introduced you to " + node.name + ", " + node.quickdesc + ".")
                     node.notifyWatchers(char, "was introduced to") 
+                    if char.isdisguised: char.isdisguised = False
                 elif (char.points == 0) and not "admin" in identity.current.groups:
                     flash("You need more Market points to arrange that introduction!")
                     raise turbogears.redirect('/')
@@ -224,6 +225,17 @@ class Root(controllers.RootController):
         if char.marketstat == 0 and char.points == 0:
             neighborwad = " "
 
+        disg = ""
+
+        if char.hasdisguise:
+            print "ARGLE FRASTER"
+            disg += "<a href='/disg'>"
+            if char.isdisguised:
+                disg += "Deactivate Disguise"
+            else:
+                disg += "Activate Disguise"
+            disg += "</a><br/>"
+
 
 #         try:
 #             debug1 = Root.wardedp(self, title)
@@ -261,6 +273,7 @@ class Root(controllers.RootController):
                     notif  = notif, 
                     watched = watched,
                     rumorwad=rumorwad,
+                    disg=disg,
                     today=today())
 
     @expose(template="archives.templates.login")
@@ -303,7 +316,7 @@ class Root(controllers.RootController):
         try:
             
             node = Node.byHex(self.ch().currentNode).neighbor(dir)
-            if not node:
+            if not node or node.expired: 
                 return None
             n = " " + node.getDesc() #" Seller of " + Node.byHex(hex).quickdesc
             l = "<a href=\"" + root + str(node.hex) + "/" + "\">"
@@ -612,18 +625,32 @@ class Root(controllers.RootController):
         char = Character.byName(turbogears.identity.current.user.character)
         if not char.hasHex(thehex):
             flash("You don't know anyone selling that item!")
-            raise turbogears.redirect("/" + char.currentNode)
+            raise turbogears.redirect("/" + str(char.currentNode))
         theitem = Item.get(itemid)
         thecost = theitem.realcost()
         if (thecost > char.wealth):
             flash("You need " +str(thecost - char.wealth) + " more deben to buy that item!")
-            raise turbogears.redirect("/" + char.currentNode)
+            raise turbogears.redirect("/" + str(char.currentNode))
         thenode = Node.byHex(thehex)
         inter = Interaction(character=char.name, day=today(), node=thenode.hex, item=theitem.name)
         char.notify("You bought " + theitem.name + " from " + thenode.name + " for " + str(thecost) + ".")
         thenode.notifyWatchers(char, "bought " + theitem.name + " from")
+        if char.isdisguised: char.isdisguised = 0
         char.wealth -= thecost
-        goback = "<a href='/"+thehex+"'>Go back to " + thenode.name + ".</a>"
+
+        if thenode.special:
+            thenode.removeItem(theitem)
+            if (len(thenode.forsale) == 0):
+                thenode.expired = True
+                for chr in thenode.users:
+                    thenode.removeCharacter(chr)
+                for chr in thenode.watchers:
+                    thenode.removeWatcher(chr)
+                flash("Having sold their last item, the merchant bids you goodbye and leaves.")
+                goback = "<a href='/'>Go back to the Bazaar.</a>"
+                thenode.notifyWatchers(char, " bought the last item from ")
+        else:
+            goback = "<a href='/"+thehex+"'>Go back to " + thenode.name + ".</a>"
         return dict(item=theitem, cost=thecost, goback=goback)
 
     @expose(template="archives.templates.buyrumor")
@@ -643,6 +670,7 @@ class Root(controllers.RootController):
         inter = Interaction(character=char.name, day=today(), node=thenode.hex, item="_rumor"+str(therumor.id)+"_"+therumor.subject)
         char.notify(thenode.name + " told you a rumor about " + therumor.subject + " for " + str(therumor.cost) + " deben:<br/>" + therumor.text)
         thenode.notifyWatchers(char, "heard a rumor about " + therumor.subject + " from")
+        if char.isdisguised: char.isdisguised = 0
         char.wealth -= therumor.cost
 
         thenode.popRumors()
@@ -668,6 +696,7 @@ class Root(controllers.RootController):
         
         char.notify(thenode.name + " squelched a rumor about " + therumor.subject + " for " + str(therumor.cost) + " deben:<br/>" + therumor.text)
         thenode.notifyWatchers(char, "squelched a rumor about " + therumor.subject + " by paying off")
+        if char.isdisguised: char.isdisguised = 0
         flash("Rumor squelched!")
         raise turbogears.redirect("/"+str(char.currentNode))
 
@@ -707,6 +736,7 @@ class Root(controllers.RootController):
         pwstring = thenode.name + "looks around furtively, then says:<blockquote>" + thesecret.passtext + "</blockquote>"
         char.notify(thenode.name + " told you a secret:<br/>"+thesecret.passtext)
         thenode.notifyWatchers(char, " heard a secret from ")
+        if char.isdisguised: char.isdisguised = 0
         goback = "<a href='/"+str(thenode.hex)+"'>Go back to " + thenode.name + ".</a>"
         return dict(pwstring=pwstring, goback=goback)
 
@@ -818,7 +848,7 @@ class Root(controllers.RootController):
 
         self.ch().wealth -= int(amount)
         thetarget.wealth += int(amount)
-        thetarget.notify(self.ch().name + " transferred " + amount + " deben to you.")
+        thetarget.notify(self.ch().getName() + " transferred " + amount + " deben to you.")
         self.ch().notify("You transferred " + amount + " deben to " + thetarget.name + ".")
         flash("Transfer succeeded!")
         raise turbogears.redirect("/")
@@ -860,6 +890,8 @@ class Root(controllers.RootController):
             flash("Agent set.")
             char.notify("You set an agent at " + node.name + ".")
             node.notifyWatchers(char, "set an agent at")
+            if char.isdisguised: char.isdisguised = 0
+
         else:
             if not node in char.watching:
                 flash("You don't have an agent at this node!")
@@ -869,6 +901,20 @@ class Root(controllers.RootController):
             flash("Agent removed.")
             char.notify("You removed an agent at " + node.name + ".")
             
+        raise turbogears.redirect("/"+str(char.currentNode))
+
+    @expose()
+    @identity.require(identity.not_anonymous())
+    def disg(self):
+        char = self.ch()
+        if not char.hasdisguise:
+            flash("You can't do that!")
+        else:
+            char.isdisguised = not char.isdisguised
+            if char.isdisguised:
+                flash("Your next transaction will be disguised.")
+            else:
+                flash("Disguise canceled.")
         raise turbogears.redirect("/"+str(char.currentNode))
 
     @expose()

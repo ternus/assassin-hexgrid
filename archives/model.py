@@ -43,7 +43,8 @@ class Node(SQLObject):
     rumorsatonce = IntCol()
     rumorsperday = IntCol()
     secrets = RelatedJoin("Secret", joinColumn="hex_id", intermediateTable="node_secret")
-
+    special = BoolCol()
+    expired = BoolCol()
     
 
     def getDesc(self):        
@@ -113,19 +114,26 @@ class Node(SQLObject):
         return (not self.deaduntil < today())
 
     def neighbor(self, dir):
+        
         try:
             if dir == Dir.north:
-                return Node.byHex(self.hex - 2)
+                node = Node.byHex(self.hex - 2)
             elif dir == Dir.northeast:
-                return Node.byHex(self.hex + 99 if self.hex % 2 else self.hex - 1)
+                node = Node.byHex(self.hex + 99 if self.hex % 2 else self.hex - 1)
             elif dir == Dir.southeast:
-                return Node.byHex(self.hex + 101 if self.hex % 2 else self.hex + 1)
+                node = Node.byHex(self.hex + 101 if self.hex % 2 else self.hex + 1)
             elif dir == Dir.south:
-                return Node.byHex(self.hex + 2)
+                node = Node.byHex(self.hex + 2)
             elif dir == Dir.southwest:
-                return Node.byHex(self.hex + 1 if self.hex % 2 else self.hex - 99)
+                node = Node.byHex(self.hex + 1 if self.hex % 2 else self.hex - 99)
             elif dir == Dir.northwest:
-                return Node.byHex(self.hex - 1 if self.hex % 2 else self.hex - 101)
+                node = Node.byHex(self.hex - 1 if self.hex % 2 else self.hex - 101)
+            else:
+                return None
+            if not node.expired:
+                return node
+            else:
+                return None
         except SQLObjectNotFound:
             return None
 
@@ -282,6 +290,8 @@ class Character(SQLObject):
         return (hasNode(node))
 
     def notify(self, text):
+        if self.isdisguised:
+            text = text + " (while disguised)"
         return Notification(charname=self.name, text=text, visible=True, new=True)
 
     def getName(self):

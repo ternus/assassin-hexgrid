@@ -22,6 +22,7 @@
       <a href="/notifications">Check Log</a><span py:replace="XML(notif)">Notify error</span><br/>
       <a href="/transfer">Transfer Money</a><br/>
       <a py:if="character.marketstat > 0 or len(character.nodes) > 0" href="/map">View Map</a><br/>
+      <span py:replace="XML(disg)">foo<br/></span>
       <span py:if="character.marketstat > 0 or len(character.nodes) > 0" py:replace="XML(nodelist)">Visit Node</span><br/>
       <span py:if="not node.isDead()"><form py:if="(character.marketstat > 0 or len(character.nodes) > 0)" action="password" method="POST">
 	<input type="text" name="thepass" value="Say Password" size="10" onFocus="this.value=''" onUnFocus="if (this.value == '') this.value='Say Something';"/>
