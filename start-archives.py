@@ -2,7 +2,7 @@
 import pkg_resources
 pkg_resources.require("TurboGears")
 
-from turbogears import config, update_config, start_server
+from turbogears import config, update_config, start_server, startup
 import cherrypy
 cherrypy.lowercase_api = True
 from os.path import *
@@ -22,5 +22,6 @@ else:
 config.update(dict(package="archives"))
 
 from archives.controllers import Root
-
+from archives import jobs
+startup.call_on_startup.append(jobs.schedule)
 start_server(Root())

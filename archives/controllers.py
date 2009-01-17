@@ -123,10 +123,10 @@ class Root(controllers.RootController):
             neighborwad = neighborwad + "<li> Southwest: " + neighbors.southwest + "</li>"
         if (neighbors.northwest):
             neighborwad = neighborwad + "<li> Northwest: " + neighbors.northwest + "</li>"
-        if (neighborwad != ""):
+        if (neighborwad != "" and node.isDead()):
+            neighborwad = "<p>These people are standing around:</p><ul>" + neighborwad + "</ul>"
+        elif (neighborwad != ""):
             neighborwad = "<p>I know these people:</p><ul>" + neighborwad + "</ul>"
-
-
 
         buystrings = [". %d deben is the lowest I can go!",
                       ", a steal at only %d deben!",
@@ -152,7 +152,7 @@ class Root(controllers.RootController):
                 itemwad += buystrings[int(hashlib.md5(item.name).hexdigest()[0], 16)] % item.realcost() # don't worry about it
                 if item.realcost() <= char.wealth:
                     # : " + str(item.realcost()) + " deben
-                    itemwad += " [<a href=\'/buy/"+str(node.hex)+"/"+str(item.id)+"'>BUY</a>]"
+                    itemwad += " [<a href=\'/buy/"+str(node.hex)+"/"+str(item.id)+"'><b>Buy</b></a>]"
                 else:
                     # : " + str(item.realcost()) + " deben
                     itemwad += " [too expensive]"
@@ -167,16 +167,32 @@ class Root(controllers.RootController):
         else:
             notif = ""
 
+        rumorstrings = ["A friend told me a secret about %s.",
+                      "Wait until you hear about %s!",
+                      "I can't wait to tell you all about %s.",
+                      "A little bird told me what %s is up to.",
+                      "Everyone's whispering about %s!",
+                      "I can't believe the latest rumor about %s.",
+                      "What %s has been doing - how astonishing!",
+                      "I could tell you the latest dirt on %s."]
+
+
         rumorwad = ""
         if (node.deaduntil <= today()): 
             for rumor in node.info:
                 if rumor.valid and rumor.visible:
-                    rumorwad += "<li>" + rumor.subject
+                    rumorwad += "<li>"
+                    rumorwad += rumorstrings[int(int(hashlib.md5(rumor.subject + str(rumor.id)).hexdigest()[0], 16) / 2)] % rumor.subject # don't worry about it
                     if rumor.cost <= char.wealth:
-                        rumorwad += " [<a href=\'/rumor/"+str(node.hex)+"/"+str(rumor.id)+"'>BUY</a>: " + str(rumor.cost) + " deben]"
+                        rumorwad += " [<a href=\'/rumor/"+str(node.hex)+"/"+str(rumor.id)+"'><b>Hear</b></a>: " + str(rumor.cost) + " deben]"
+                        if ((rumor.cost * 2) <= char.wealth):
+                            if (len(list(Interaction.select(AND(Interaction.q.character==char.name, Interaction.q.node==node.hex, Interaction.q.item=="_rumor"+str(rumor.id)+"_"+rumor.subject))))):
+                                rumorwad += " [<a href=\'/squelch/"+str(node.hex)+"/"+str(rumor.id)+"'><b>Squelch</b></a>: " + str(rumor.cost * 2) + " deben]"
+
                     else:
                         rumorwad += " [too expensive]"
-                rumorwad += "</li>"
+
+                    rumorwad += "</li>"
             if rumorwad != "":
                 rumorwad = "<p>I have heard rumors about these subjects:</p><ul>" + rumorwad + "</ul>"
         
@@ -289,7 +305,7 @@ class Root(controllers.RootController):
             node = Node.byHex(self.ch().currentNode).neighbor(dir)
             if not node:
                 return None
-            n = " " + node.quickdesc #" Seller of " + Node.byHex(hex).quickdesc
+            n = " " + node.getDesc() #" Seller of " + Node.byHex(hex).quickdesc
             l = "<a href=\"" + root + str(node.hex) + "/" + "\">"
             if ((not Character.byName(turbogears.identity.current.user.character).hasNode(node)) and (node.hex != startNode)):
 
@@ -299,7 +315,7 @@ class Root(controllers.RootController):
                 n += "]</small>"    
                 
             else:
-                n = l + node.name + "</a>, " + node.quickdesc + "."
+                n = l + node.name + "</a>, " + node.getDesc() + "."
 # 	    result = Ward.select(Ward.q.node == Node.byHex(hex).id)
 #             for item in result:
 #                     n += "<ul> <li>  Requires: " + item.key + "</li> </ul>"
@@ -504,7 +520,7 @@ class Root(controllers.RootController):
     @expose()
     @identity.require(identity.in_group("admin"))
     def advancetime(self, submit):
-        self.autotick()
+        autotick()
         flash("* * * T I C K * * *")
         raise turbogears.redirect("/")
 
@@ -567,7 +583,7 @@ class Root(controllers.RootController):
         os.spawnlp(os.P_WAIT, "convert", "", "archive/static/images/map"+char.name+".svg", "archive/static/images/map"+char.name+".png")
         map = "<img src='static/images/map"+char.name+".png' />"
         goback = "<a href='/"+str(thenode.hex)+"'>Go back to " + thenode.name + ".</a>"
-        return dict(map=map, goback=goback)
+        return dict(map=map, goback=goback, character=char)
         
 
                                           
@@ -615,28 +631,45 @@ class Root(controllers.RootController):
     def rumor(self, thehex, rumorid):
         char = Character.byName(turbogears.identity.current.user.character)
         if not char.hasHex(thehex):
-            flash("You don't know anyone selling that item!")
+            flash("You don't know anyone selling that rumor!")
             raise turbogears.redirect("/" + str(char.currentNode))
         therumor = Info.get(int(rumorid))
         if (therumor.cost > char.wealth):
-            flash("You need " +str(therumor.cost - char.wealth) + " more deben to buy that rumor!")
+            flash("You need " +str(therumor.cost - char.wealth) + " more deben to hear that rumor!")
             raise turbogears.redirect("/" + str(char.currentNode))
         thenode = Node.byHex(thehex)
         
         
-        inter = Interaction(character=char.name, day=today(), node=thenode.hex, item="_rumor"+therumor.subject+"_"+str(therumor.id))
+        inter = Interaction(character=char.name, day=today(), node=thenode.hex, item="_rumor"+str(therumor.id)+"_"+therumor.subject)
         char.notify(thenode.name + " told you a rumor about " + therumor.subject + " for " + str(therumor.cost) + " deben:<br/>" + therumor.text)
         thenode.notifyWatchers(char, "heard a rumor about " + therumor.subject + " from")
         char.wealth -= therumor.cost
-        if therumor in thenode.info:
-            thenode.removeInfo(therumor)
-        if thenode in therumor.node:
-            therumor.removeNode(thenode)
+
         thenode.popRumors()
-        
-        goback = "<a href='/"+thehex+"'>Go back to " + node.name + ".</a>"
+
+        goback = "<a href='/"+thehex+"'>Go back to " + thenode.name + ".</a>"
         return dict(node=thenode, rumor=therumor, goback=goback)
 
+
+    @expose()
+    @identity.require(identity.not_anonymous())
+    def squelch(self, thehex, rumorid):
+        char = self.ch()
+        therumor = Info.get(rumorid)
+        if (therumor.cost * 2 > char.wealth):
+            flash("You need " +str((therumor.cost * 2) - char.wealth) + " more deben to squelch that rumor!")
+            raise turbogears.redirect("/" + str(char.currentNode))
+        char.wealth -= (therumor.cost * 2)
+        therumor.visible = False
+        thenode = Node.byHex(char.currentNode)
+        for qnode in therumor.node:
+            therumor.removeNode(qnode)
+            qnode.popRumors()
+        
+        char.notify(thenode.name + " squelched a rumor about " + therumor.subject + " for " + str(therumor.cost) + " deben:<br/>" + therumor.text)
+        thenode.notifyWatchers(char, "squelched a rumor about " + therumor.subject + " by paying off")
+        flash("Rumor squelched!")
+        raise turbogears.redirect("/"+str(char.currentNode))
 
     @expose(template="archives.templates.password")
     @identity.require(identity.not_anonymous())
@@ -858,33 +891,3 @@ class Root(controllers.RootController):
         flash("Character reset!")
         raise turbogears.redirect("/")
 
-    def autotick(self):
-        day = today()
-        chars = Character.select()
-        for char in chars:
-            if char.marketstat:
-                char.notify("The sun rises.  You gain " + str(char.marketstat) + " Market Points and " + str(char.incomestat) + " deben.")
-            else:
-                char.notify("The sun rises.  You gain " + str(char.incomestat) + " deben.")
-
-            char.points = char.marketstat
-            char.wealth += char.incomestat
-            for node in char.nodes:
-                inters = Interaction.select(AND(Interaction.q.node == node.hex, Interaction.q.character == char.name), orderBy=DESC(Interaction.q.day))
-                mostRecent = list(inters)[0].day
-                if (today() >= mostRecent + maxNodeAge):
-                    if node in char.watching:
-                        continue
-                    if (today() == mostRecent + maxNodeAge and random() < .5):
-                        continue
-                    char.notify("Since you haven't bought anything in " + str(today() - mostRecent) + " days, " + node.name + " has broken off your business relationship.")
-                    char.removeNode(node)
-                    print "Removed node " + node.name + " from char " + char.name
-                elif (today() >= mostRecent + maxNodeAge - 1):
-                    char.notify(node.name + " tells you, \"If you don't buy something from me, I may decide your business just isn't worth the trouble.\"")
-
-        for node in Node.select(Node.q.rumorsperday > 0):
-            node.popRumors()
-                                
-        Interaction.get(1).day += 1
-        Interaction.get(1).date = datetime.now()

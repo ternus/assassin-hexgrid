@@ -4,7 +4,7 @@ from sqlobject import *
 from turbogears import identity
 from random import random, sample, shuffle
 from datetime import *
-
+from sys import exit
 
 hub = PackageHub("archives")
 __connection__ = hub
@@ -64,27 +64,31 @@ class Node(SQLObject):
     def rumorsToday(self):
         return self.rumorsSoldToday() + len(self.info)
 
-    def popRumors(self):
+    def popRumors(self, myRumor=None):
         print "Popping rumors for "+self.name
         if self.rumorsToday() >= self.rumorsperday and self.rumorsperday: # That's enough rumors for now, lads
+            print "Enough rumors"
             return
         counter = 0
         for rumor in self.info:
-            if (random() < rumor.probability / 2):
+            if (random() < rumor.probability / 2 and rumor.id != myRumor):
+                print "Removing rumor " + rumor.subject
                 self.removeInfo(rumor)
         if len(self.getAllNeighbors()):
             nb = self.getAllNeighbors()
             shuffle(nb)
+            print "Checking nodes"
             for node in nb:
                 ni = node.info
                 shuffle(ni)
                 for nearrumor in ni:
-                    while(len(self.info) < self.rumorsatonce):
+                    print "Checking " + nearrumor.subject
+                    if (len(self.info) < self.rumorsatonce):
                         if (random() < nearrumor.probability and nearrumor.visible and nearrumor.valid and not nearrumor in self.info):
                             self.addInfo(nearrumor)
                             print "Added rumor " + nearrumor.subject
-
-        while (len(self.info) < self.rumorsatonce and counter < 20): # Max 20 passes
+        print "Step 2: checking all nodes"
+        while (len(self.info) < self.rumorsatonce and counter < 10): # Max 10 passes
             if self.rumorsToday() >= self.rumorsperday and self.rumorsperday: # That's enough rumors for now, lads
                 return
             allrumors = list(Info.select(AND(Info.q.probability > 0,
@@ -177,17 +181,17 @@ class Node(SQLObject):
         for node in three:
             for char in node.watchers:
                 threelist += [char]
-        nstring = "Your agent at " + self.name + "(" + str(self.hex) + ") tells you:<br/>"
+        nstring = "Your agent at " + self.name + " tells you:<br/>"
         notified = [who] #don't notify someone of what they're doing
         for char in self.watchers:
             if char in notified:
                 continue
             if (random() > 1.0/3):
                 if who.isdisguised:
-                    nstring += "A mysterious figure "
+                    wstring = "A mysterious figure "
                 else:
-                    nstring += who.getName() + " "
-                char.notify(nstring + what + " " + self.name + ".")
+                    wstring =  who.getName() + " "
+                char.notify(nstring + wstring + what + " " + self.name + ".")
                 notified += [char]
             else:
                 twolist += [char]
@@ -445,4 +449,39 @@ class Permission(SQLObject):
                          joinColumn='permission_id',
                          otherColumn='group_id')
 
+
+
+def autotick():
+    day = today()
+    chars = Character.select()
+    for char in chars:
+        if char.marketstat:
+            char.notify("The sun rises.  You gain " + str(char.marketstat) + " Market Points and " + str(char.incomestat) + " deben.")
+        else:
+            char.notify("The sun rises.  You gain " + str(char.incomestat) + " deben.")
+
+        char.points = char.marketstat
+        char.wealth += char.incomestat
+        for node in char.nodes:
+            inters = Interaction.select(AND(Interaction.q.node == node.hex, Interaction.q.character == char.name), orderBy=DESC(Interaction.q.day))
+            mostRecent = list(inters)[0].day
+            if (today() >= mostRecent + maxNodeAge):
+                if node in char.watching:
+                    continue
+                if (today() == mostRecent + maxNodeAge and random() < .5):
+                    continue
+                char.notify("Since you haven't bought anything in " + str(today() - mostRecent) + " days, " + node.name + " has ended your business relationship.")
+                char.removeNode(node)
+                print "Removed node " + node.name + " from char " + char.name
+            elif (today() >= mostRecent + maxNodeAge - 1):
+                char.notify(node.name + " tells you, \"If you don't buy something from me, I may decide your business just isn't worth the trouble.\"")
+
+    for node in Node.select(Node.q.rumorsperday > 0):
+        node.popRumors()
+
+    Interaction.get(1).day += 1
+    Interaction.get(1).date = datetime.now()
+
+    print "Tick complete.  Welcome to day " + str(today())
+    hub.commit()
 
