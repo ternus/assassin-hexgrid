@@ -73,6 +73,10 @@
 </head>
 
 <body>
+  <div align="center"><h1>Welcome to the Thebes Market Interface</h1>
+    <h3>thebes-gms@mit.edu</h3>
+  </div>
+  
     <div id="loginBox">
         <h1>Login</h1>
         <p>${message}</p>
