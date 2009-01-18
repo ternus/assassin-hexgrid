@@ -38,6 +38,13 @@
 	  Reason: <input type="text" name="reason"/><br/> 
           <input type="submit" name="submit" value="Apply"/>
         </form>
+	
+	<hr/>
+	
+	<p py:if="not char.hasdisguise">If you know you can, you can
+	click <a href="/adddisguise">here</a> to give yourself the
+	Disguise ability.</p>
+	
     </div>
 </body>
 </html>

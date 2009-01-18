@@ -629,6 +629,14 @@ class Root(controllers.RootController):
         goback = "<a href='/"+str(thenode.hex)+"'>Go back to " + thenode.name + ".</a>"
         return dict(notifications=notwad, goback=goback, character=char)
 
+    @expose()
+    @identity.require(identity.not_anonymous())
+    def adddisguise(self):
+        char = self.ch()
+        char.hasdisguise = True
+        flash("Added the disguise ability!")
+        raise turbogears.redirect("/"+str(char.currentNode))
+
 
     @expose(template="archives.templates.buy")
     @identity.require(identity.not_anonymous())

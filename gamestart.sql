@@ -560,5 +560,4 @@ INSERT INTO "tg_user" VALUES(46,'Zannanza','','Zannanza','eyes','2009-01-12 20:3
 INSERT INTO "tg_user" VALUES(47,'Hantili','','Hantili','silvery','2009-01-12 20:32:00','Hantili');
 INSERT INTO "tg_user" VALUES(48,'Oba','','Oba','lotus','2009-01-12 20:32:00','Oba');
 INSERT INTO "tg_user" VALUES(49,'Shenti','','Shenti','brick','2009-01-12 20:32:00','Shenti');
-
 COMMIT;
