@@ -41,17 +41,19 @@ class Root(controllers.RootController):
     @expose(template="archives.templates.node")
     # @identity.require(identity.in_group("admin"))
     @identity.require(identity.not_anonymous())
-    def index(self, hex=startNode, referrer=None):
+    def index(self, hex=startNode):
         print "Visit hex: " + str(hex)
 
         root = str(turbogears.url('/'))
         hexjump = 0
         # First, find the page.
         try:
-            node = Node.byHex(hex)
+            node = Node.byHex(int(hex))
+            print node
         except SQLObjectNotFound:
             try:
                 node = Node.byName(hex)
+                print node
                 hexjump = 1
             except SQLObjectNotFound:
                 raise turbogears.redirect("notfound", title = hex)
@@ -62,20 +64,23 @@ class Root(controllers.RootController):
         char = Character.byName(turbogears.identity.current.user.character)
 
         # Next, make sure that the character has the Inspiration to go to this page.
-        if (not node.isStart()): #everyone can tag the start page
+        if (not node.isStart()) and not "admin" in identity.current.groups: #everyone can tag the start page
 #            if (Root.wardedp(self, title) == "warded"):
 #                 flash("You haven't satisfied the requirements to go to that page!")
 #                 raise turbogears.redirect('/')
             if not char.hasHex(hex):
                 found = 0
+                print node
                 for nb in node.getAllNeighbors():
+                    print nb
                     if nb in char.nodes or nb.isStart():
                         found = 1
                         break
-                if not found and not "admin" in identity.current.groups:
+                if not found:
+ 
                     flash("You haven't been introduced to that merchant yet!")
                     raise turbogears.redirect('/')
-                if (char.points > 0) and not "admin" in identity.current.groups:
+                if (char.points > 0):
                     
                     flash(nb.name + " introduces you to " + node.name + ".")
                     char.points -= 1
@@ -87,7 +92,7 @@ class Root(controllers.RootController):
                     char.notify(Node.byHex(char.currentNode).name + " introduced you to " + node.name + ", " + node.quickdesc + ".")
                     node.notifyWatchers(char, "was introduced to") 
                     if char.isdisguised: char.isdisguised = False
-                elif (char.points == 0) and not "admin" in identity.current.groups:
+                elif (char.points == 0):
                     flash("You need more Market points to arrange that introduction!")
                     raise turbogears.redirect('/')
 
@@ -97,11 +102,6 @@ class Root(controllers.RootController):
         #html_text = othernodes.sub(r'<a href="%s\1">\1</a>' % root, html_text, 99)
 
         neighbors = Neighbors()
-        row = (node.hex % 100) / 100
-        col = node.hex - (row * 100)
-
-        print "Row is " + str(row)
-        print "Column is " + str(col)
 
         neighbors.north = Root.neighborstat(self, Dir.north, root)
         neighbors.northeast = Root.neighborstat(self, Dir.northeast , root)
@@ -153,7 +153,10 @@ class Root(controllers.RootController):
                 itemwad += buystrings[int(hashlib.md5(item.name).hexdigest()[0], 16)] % item.realcost() # don't worry about it
                 if item.realcost() <= char.wealth:
                     # : " + str(item.realcost()) + " deben
-                    itemwad += " [<a href=\'/buy/"+str(node.hex)+"/"+str(item.id)+"'><b>Buy</b></a>]"
+                    itemwad += " [<a href=\'/buy/"+str(node.hex)+"/"+str(item.id)+"'><b>Buy</b></a>"
+                    if item.number > 0:
+                        itemwad += "(" + str(item.number) + " available)"
+                    itemwad += "]"
                 else:
                     # : " + str(item.realcost()) + " deben
                     itemwad += " [too expensive]"
@@ -319,7 +322,7 @@ class Root(controllers.RootController):
             if not node or node.expired: 
                 return None
             n = " " + node.getDesc() #" Seller of " + Node.byHex(hex).quickdesc
-            l = "<a href=\"" + root + str(node.hex) + "/" + "\">"
+            l = "<a href=\"" + root + str(node.hex) + "\">"
             if ((not Character.byName(turbogears.identity.current.user.character).hasNode(node)) and (node.hex != startNode)):
 
                 n = node.name + ", " + n + ". <small>[Locked" 
@@ -472,6 +475,7 @@ class Root(controllers.RootController):
 
     @expose()
     def default(self, title):
+        print "quux " + title
         return self.index(title)
 
     @expose(template="archives.templates.points")
@@ -494,6 +498,13 @@ class Root(controllers.RootController):
         raise turbogears.redirect("/")
 
 
+    @expose()
+    @identity.require(identity.in_group("admin"))
+    def manualpop(self):
+        for node in Node.select():
+            node.popRumors()
+        flash("Done!")
+        raise turbogears.redirect("/gm")
 
     @expose()
     @identity.require(identity.in_group("admin"))
@@ -638,6 +649,13 @@ class Root(controllers.RootController):
         if char.isdisguised: char.isdisguised = 0
         char.wealth -= thecost
 
+        if theitem.number > 0:
+            theitem.number -= 1
+            if theitem.number == 0 and not thenode.special:
+                thenode.removeItem(theitem)
+                flash("You bought the last of that item!")
+                thenode.notifyWatchers(char, "bought the last of " + theitem.name + " from")
+
         if thenode.special:
             thenode.removeItem(theitem)
             if (len(thenode.forsale) == 0):
@@ -666,18 +684,17 @@ class Root(controllers.RootController):
             raise turbogears.redirect("/" + str(char.currentNode))
         thenode = Node.byHex(thehex)
         
-        
-        inter = Interaction(character=char.name, day=today(), node=thenode.hex, item="_rumor"+str(therumor.id)+"_"+therumor.subject)
-        char.notify(thenode.name + " told you a rumor about " + therumor.subject + " for " + str(therumor.cost) + " deben:<br/>" + therumor.text)
-        thenode.notifyWatchers(char, "heard a rumor about " + therumor.subject + " from")
-        if char.isdisguised: char.isdisguised = 0
-        char.wealth -= therumor.cost
-
-        thenode.popRumors()
+        if not (len(list(Interaction.select(AND(Interaction.q.character==char.name, Interaction.q.node==thenode.hex, Interaction.q.item=="_rumor"+str(therumor.id)+"_"+therumor.subject))))):
+            inter = Interaction(character=char.name, day=today(), node=thenode.hex, item="_rumor"+str(therumor.id)+"_"+therumor.subject)
+            char.notify(thenode.name + " told you a rumor about " + therumor.subject + " for " + str(therumor.cost) + " deben:<br/><i>" + therumor.text + "</i>")
+            thenode.notifyWatchers(char, "heard a rumor about " + therumor.subject + " from")
+            if char.isdisguised: char.isdisguised = 0
+            char.wealth -= therumor.cost
+            thenode.popRumors()
 
         goback = "<a href='/"+thehex+"'>Go back to " + thenode.name + ".</a>"
-        return dict(node=thenode, rumor=therumor, goback=goback)
-
+        squelch = "<a href=\'/squelch/"+str(thenode.hex)+"/"+str(therumor.id)+"'>Squelch this rumor for " + str(therumor.cost * 2) + " deben</a>."
+        return dict(node=thenode, rumor=therumor, goback=goback, squelch=squelch)
 
     @expose()
     @identity.require(identity.not_anonymous())
@@ -734,7 +751,7 @@ class Root(controllers.RootController):
         thenode = Node.byHex(char.currentNode)
         thesecret = Secret.get(id)
         pwstring = thenode.name + "looks around furtively, then says:<blockquote>" + thesecret.passtext + "</blockquote>"
-        char.notify(thenode.name + " told you a secret:<br/>"+thesecret.passtext)
+        char.notify(thenode.name + " told you a secret:<br/><i>"+thesecret.passtext+"</i>")
         thenode.notifyWatchers(char, " heard a secret from ")
         if char.isdisguised: char.isdisguised = 0
         goback = "<a href='/"+str(thenode.hex)+"'>Go back to " + thenode.name + ".</a>"

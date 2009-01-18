@@ -23,12 +23,10 @@ document.location.href = x
 <form name="sform">	  
     <p><a href="/tick">Advance Time</a></p>
     <p><a href="/allmap">View Full Map</a></p>
+    <p><a href="/manualpop">Manually Populate Rumors</a></p>
     <p>View Map For: <select name="jumpmenu" onchange="if (this.selectedIndex > 0) location.href='/gmmap/'+this[this.selectedIndex].value;">
 <option>Select Character</option>
 <span py:replace="XML(charlist)">****ERROR****</span></select></p>
-    <p>Jump To: <select name="jumpmenu" onchange="if (this.selectedIndex > 0) location.href='/'+this[this.selectedIndex].value;">
-<option>Select Node</option>
-<span py:replace="XML(nodelist)">****ERROR****</span></select></p>
     <p>Jump To: <select name="jumpmenu" onchange="if (this.selectedIndex > 0) location.href='/'+this[this.selectedIndex].value;">
 <option>Select Node</option>
 <span py:replace="XML(nodelist)">****ERROR****</span></select></p></form>

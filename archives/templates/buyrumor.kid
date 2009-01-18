@@ -20,7 +20,7 @@
 	    <span py:replace="rumor.text">Secrets and lies!</span>
 	  </blockquote>
 	  <br/>
-	  <span py:replace="XML(goback)"></span></p>
+	  <span py:replace="XML(goback)"></span>  <span py:replace="XML(squelch)"></span></p>
     </div>
 </body>
 </html>

@@ -67,14 +67,17 @@ class Node(SQLObject):
 
     def popRumors(self, myRumor=None):
         print "Popping rumors for "+self.name
-        if self.rumorsToday() >= self.rumorsperday and self.rumorsperday: # That's enough rumors for now, lads
+        if self.rumorsToday() >= self.rumorsperday or not self.rumorsperday: # That's enough rumors for now, lads
             print "Enough rumors"
             return
         counter = 0
+        subjlist = []
         for rumor in self.info:
             if (random() < rumor.probability / 2 and rumor.id != myRumor):
                 print "Removing rumor " + rumor.subject
                 self.removeInfo(rumor)
+            else:
+                subjlist += [rumor.subject]
         if len(self.getAllNeighbors()):
             nb = self.getAllNeighbors()
             shuffle(nb)
@@ -83,13 +86,17 @@ class Node(SQLObject):
                 ni = node.info
                 shuffle(ni)
                 for nearrumor in ni:
-                    print "Checking " + nearrumor.subject
+                    myrandom = random()
+                    print "Checking " + nearrumor.subject + " " + str(myrandom)
                     if (len(self.info) < self.rumorsatonce):
-                        if (random() < nearrumor.probability and nearrumor.visible and nearrumor.valid and not nearrumor in self.info):
+                        if (myrandom < nearrumor.probability and nearrumor.visible and nearrumor.valid and not nearrumor in self.info and not nearrumor.subject in subjlist):
                             self.addInfo(nearrumor)
                             print "Added rumor " + nearrumor.subject
-        print "Step 2: checking all nodes"
-        while (len(self.info) < self.rumorsatonce and counter < 10): # Max 10 passes
+                    else:
+                        return
+        counter = 0
+        print "Step 2: checking all nodes " + str(len(self.info)) + " " + str(self.rumorsatonce)
+        while (len(self.info) < self.rumorsatonce and counter < 30): # Max 10 passes
             if self.rumorsToday() >= self.rumorsperday and self.rumorsperday: # That's enough rumors for now, lads
                 return
             allrumors = list(Info.select(AND(Info.q.probability > 0,
@@ -97,10 +104,13 @@ class Node(SQLObject):
                                         Info.q.valid == True)))
             shuffle(allrumors)
             for rumor in allrumors:
-                print "Checking " + rumor.subject
-                if (random() < rumor.probability and not rumor in self.info):
+                myrandom = random()
+                print "Checking " + rumor.subject + " " + str(myrandom) + " " + str(rumor.probability)
+                if (myrandom < rumor.probability and not rumor in self.info and not rumor.subject in subjlist):
                     self.addInfo(rumor)
                     print "Added rumor " + rumor.subject
+                    if len(self.info) >= self.rumorsatonce: 
+                        return
 
                     if self.rumorsToday() >= self.rumorsperday: 
                         return
@@ -114,7 +124,6 @@ class Node(SQLObject):
         return (not self.deaduntil < today())
 
     def neighbor(self, dir):
-        
         try:
             if dir == Dir.north:
                 node = Node.byHex(self.hex - 2)
@@ -140,8 +149,9 @@ class Node(SQLObject):
     def getAllNeighbors(self):
         neighbors = []
         for dir in range(6):
-            if (self.neighbor(dir)):
-                neighbors += [self.neighbor(dir)]
+            q = self.neighbor(dir)
+            if q:
+                neighbors += [q]
         return neighbors
 
     def getAllInRange(self, range):
@@ -281,10 +291,10 @@ class Character(SQLObject):
     hasdisguise = BoolCol(default=False)
     
     def hasHex(self, hex):
-        return ((Node.byHex(hex) in self.nodes) or Node.byHex(hex).isStart())
+        return ((Node.byHex(hex) in self.nodes) or Node.byHex(hex).isStart() or "admin" in identity.current.groups)
 
     def hasNode(self, node):
-        return ((node in self.nodes) or node.isStart())
+        return ((node in self.nodes) or node.isStart() or "admin" in identity.current.groups)
 
     def canSeeHex(self, node):
         return (hasNode(node))
