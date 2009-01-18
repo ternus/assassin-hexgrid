@@ -493,7 +493,7 @@ class Root(controllers.RootController):
         char.points += int(market)
         char.wealth += int(money)
         inter = Interaction(character=char.name, day=today(), node=999, item="ADD_"+market+"_"+money+"_"+reason)
-        char.notify("You changed your market points by " + market + " and your money by " + money + " for reason:<br/>" + reason)
+        char.notify("You changed your market points by " + market + " and your money by " + money + " for reason:<br/><i>" + reason + "</i>")
         turbogears.flash("Done.")
         raise turbogears.redirect("/")
 
@@ -723,7 +723,7 @@ class Root(controllers.RootController):
             therumor.removeNode(qnode)
             qnode.popRumors()
         
-        char.notify(thenode.name + " squelched a rumor about " + therumor.subject + " for " + str(therumor.cost) + " deben:<br/>" + therumor.text)
+        char.notify(thenode.name + " squelched a rumor about " + therumor.subject + " for " + str(therumor.cost) + " deben:<br/><i>" + therumor.text + "</i>")
         thenode.notifyWatchers(char, "squelched a rumor about " + therumor.subject + " by paying off")
         if char.isdisguised: char.isdisguised = 0
         flash("Rumor squelched!")
@@ -748,7 +748,7 @@ class Root(controllers.RootController):
                     raise turbogears.redirect("/req/"+str(secret.id))
                 else: 
                     pwstring = thenode.name + " says: <blockquote>" + secret.passtext + "</blockquote>"
-                    char.notify(thenode.name + " told you a secret:<br/>"+secret.passtext)
+                    char.notify(thenode.name + " told you a secret:<br/><i>"+secret.passtext + "</i>")
                     thenode.notifyWatchers(char, " heard a secret from ")
         
         if (not found): 

@@ -26,11 +26,8 @@
 	do this if you know you can.</p>
 	<p><b>Note</b>:  Use <a href="/transfer">this form</a> to transfer money.</p>
 
-
 	<p>Enter the amount to add (negative to remove) in the boxes.
 	Enter the source of these points in the "Reason" box.</p>
-
-
 
         <form action="spendcommit" method="POST">
 	  Modify Market Points: <input type="text" name="market" value="0" size="2"/><br/>
