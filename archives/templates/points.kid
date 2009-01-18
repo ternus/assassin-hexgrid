@@ -42,7 +42,10 @@
 	<hr/>
 	
 	<p py:if="not char.hasdisguise">If you know you can, you can
-	click <a href="/adddisguise">here</a> to give yourself the
+	click <a href="/setdisguise">here</a> to give yourself the
+	Disguise ability.</p>
+	<p py:if="char.hasdisguise">If you know you must, you can
+	click <a href="/setdisguise">here</a> to remove the
 	Disguise ability.</p>
 	
     </div>

@@ -631,12 +631,16 @@ class Root(controllers.RootController):
 
     @expose()
     @identity.require(identity.not_anonymous())
-    def adddisguise(self):
+    def setdisguise(self):
         char = self.ch()
-        char.hasdisguise = True
-        flash("Added the disguise ability!")
+        if char.hasdisguise:
+            char.hasdisguise = True
+            flash("Added the disguise ability!")
+        else:
+            char.hasdisguise = False
+            flash("Removed the disguise ability!")
+        inter = Interaction(character=char.name, day=today(), node=666, item="DISGUISE_"+str(char.hasdisguise))
         raise turbogears.redirect("/"+str(char.currentNode))
-
 
     @expose(template="archives.templates.buy")
     @identity.require(identity.not_anonymous())
