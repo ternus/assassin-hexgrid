@@ -5,6 +5,7 @@ from turbogears import identity
 from random import random, sample, shuffle
 from datetime import *
 from sys import exit
+import os
 
 hub = PackageHub("archives")
 __connection__ = hub
@@ -504,6 +505,9 @@ def autotick():
 
     Interaction.get(1).day += 1
     Interaction.get(1).date = datetime.now()
+    print "Copying..."
+    os.spawnlp(os.P_NOWAIT, "cp", "", "/opt/thebes/market/devdata.sqlite", "/opt/thebes/market/devdata.sqlite."+str(day))
+    
 
     print "Tick complete.  Welcome to day " + str(today())
     hub.commit()
