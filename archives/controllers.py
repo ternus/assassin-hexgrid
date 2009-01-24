@@ -725,7 +725,7 @@ class Root(controllers.RootController):
             therumor.removeNode(qnode)
             qnode.popRumors()
         
-        char.notify(thenode.name + " squelched a rumor about " + therumor.subject + " for " + str(therumor.cost) + " deben:<br/><i>" + therumor.text + "</i>")
+        char.notify(thenode.name + " squelched a rumor about " + therumor.subject + " for " + str(therumor.cost * 2) + " deben:<br/><i>" + therumor.text + "</i>")
         thenode.notifyWatchers(char, "squelched a rumor about " + therumor.subject + " by paying off")
         if char.isdisguised: char.isdisguised = 0
         flash("Rumor squelched!")
