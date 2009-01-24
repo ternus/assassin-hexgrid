@@ -881,7 +881,7 @@ class Root(controllers.RootController):
         thetarget.wealth += int(amount)
         thetarget.notify(self.ch().getName() + " transferred " + amount + " deben to you.")
         self.ch().notify("You transferred " + amount + " deben to " + thetarget.name + ".")
-        inter = Interaction(character=char.name, day=today(), node=889, item="_transfer"+str(amount)+"_"+self.ch().name+"_"+thetarget.name)
+        inter = Interaction(character=self.ch().name, day=today(), node=889, item="_transfer"+str(amount)+"_"+self.ch().name+"_"+thetarget.name)
         flash("Transfer succeeded!")
         raise turbogears.redirect("/")
 
