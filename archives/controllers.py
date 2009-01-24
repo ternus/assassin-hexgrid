@@ -528,7 +528,7 @@ class Root(controllers.RootController):
     def gm(self):
         charlist =""
         nodelist =""
-        for char in Character.select(NOT(Character.q.name.startswith("admin"))):
+        for char in Character.select(NOT(Character.q.name.startswith("admin")), orderBy=Character.q.name):
                 charlist += "<OPTION VALUE=\"" + str(char.id) + "\">"+char.name+"</OPTION>"
         for node in Node.select(orderBy=Node.q.name):
                 nodelist += "<OPTION VALUE=\"" + str(node.hex) + "\">"+node.name+"</OPTION>"
@@ -815,7 +815,7 @@ class Root(controllers.RootController):
     @identity.require(identity.not_anonymous())
     def transfer(self):
         charlist = "<SELECT NAME=\"target\"><option value=''>Select Character...</option>"
-        for char in Character.select(NOT(Character.q.name.startswith("admin"))):
+        for char in Character.select(NOT(Character.q.name.startswith("admin")), orderBy=Character.q.name):
             if char != self.ch():
                 charlist += "<OPTION VALUE=\"" + char.name + "\">"+char.name+"</OPTION>"
         charlist += "</SELECT>"
@@ -913,7 +913,7 @@ class Root(controllers.RootController):
                 raise turbogears.redirect("/"+str(char.currentNode))
                                                    
 
-            inter = Interaction(character=char.name, day=today(), node=777, item="AGENT")
+            inter = Interaction(character=char.name, day=today(), node=node.hex, item="AGENT")
                 
             char.addWatchedNode(node)
             flash("Agent set.")
