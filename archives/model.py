@@ -74,11 +74,12 @@ class Node(SQLObject):
         counter = 0
         subjlist = []
         for rumor in self.info:
-            if (random() < rumor.probability / 2 and rumor.id != myRumor):
-                print "Removing rumor " + rumor.subject
-                self.removeInfo(rumor)
-            else:
-                subjlist += [rumor.subject]
+            for i in range(1,len(rumor.node)):
+                if (random() < rumor.probability / 2 and rumor.id != myRumor):
+                    print "Removing rumor " + rumor.subject
+                    self.removeInfo(rumor)
+                else:
+                    subjlist += [rumor.subject]
 #         if len(self.getAllNeighbors()):
 #             nb = self.getAllNeighbors()
 #             shuffle(nb)
