@@ -196,10 +196,10 @@ class Node(SQLObject):
         """ I bet there's a better way to do this."""
         for node in two:
             for char in node.watchers:
-                twolist += [(char, node)]
+                twolist += [char]
         for node in three:
             for char in node.watchers:
-                threelist += [(char, node)]
+                threelist += [char]
         nstring = "Your agent at " + self.name + " tells you:<br/>"
         notified = [who] #don't notify someone of what they're doing
         for char in self.watchers:
@@ -215,7 +215,7 @@ class Node(SQLObject):
             else:
                 twolist += [char]
         if twolist:
-            for (char, node) in twolist:
+            for char in twolist:
                 if char in notified:
                     continue
                 if char in self.watchers or random() > 1.0/3:
@@ -241,10 +241,10 @@ class Node(SQLObject):
                 else:
                     threelist += [(char, node)]
         if threelist:
-            for (char,node) in threelist:
+            for char in threelist:
                 if char in notified:
                     continue
-                if (char,node) in twolist or random() > 1.0/3:
+                if char in twolist or random() > 1.0/3:
                     nstring = "Your agent at " + node.name + " tells you:<br/>"
                     got = sample(info, 1)
                     if "who" in got:
