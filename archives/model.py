@@ -79,22 +79,22 @@ class Node(SQLObject):
                 self.removeInfo(rumor)
             else:
                 subjlist += [rumor.subject]
-        if len(self.getAllNeighbors()):
-            nb = self.getAllNeighbors()
-            shuffle(nb)
-            print "Checking nodes"
-            for node in nb:
-                ni = node.info
-                shuffle(ni)
-                for nearrumor in ni:
-                    myrandom = random()
-                    print "Checking " + nearrumor.subject + " " + str(myrandom)
-                    if (len(self.info) < self.rumorsatonce):
-                        if (myrandom < (nearrumor.probability / 2.0) and nearrumor.visible and nearrumor.valid and not nearrumor in self.info and not nearrumor.subject in subjlist):
-                            self.addInfo(nearrumor)
-                            print "Added rumor " + nearrumor.subject
-                    else:
-                        return
+#         if len(self.getAllNeighbors()):
+#             nb = self.getAllNeighbors()
+#             shuffle(nb)
+#             print "Checking nodes"
+#             for node in nb:
+#                 ni = node.info
+#                 shuffle(ni)
+#                 for nearrumor in ni:
+#                     myrandom = random()
+#                     print "Checking " + nearrumor.subject + " " + str(myrandom)
+#                     if (len(self.info) < self.rumorsatonce):
+#                         if (myrandom < (nearrumor.probability / 2.0) and nearrumor.visible and nearrumor.valid and not nearrumor in self.info and not nearrumor.subject in subjlist):
+#                             self.addInfo(nearrumor)
+#                             print "Added rumor " + nearrumor.subject
+#                     else:
+#                         return
         counter = 0
         print "Step 2: checking all nodes " + str(len(self.info)) + " " + str(self.rumorsatonce)
         while (len(self.info) < self.rumorsatonce and counter < 30): # Max 10 passes
