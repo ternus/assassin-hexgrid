@@ -200,7 +200,7 @@ class Node(SQLObject):
         for node in three:
             for char in node.watchers:
                 threelist += [{"char":char, "node":node}]
-        nstring = "Your agent at " + self.name + " tells you:<br/>"
+        nstring = "Your agent at " + self.name + " tells you:<br/><i>"
         notified = [who] #don't notify someone of what they're doing
         for char in self.watchers:
             if char in notified:
@@ -210,7 +210,7 @@ class Node(SQLObject):
                     wstring = "A mysterious figure "
                 else:
                     wstring =  who.getName() + " "
-                char.notify(nstring + wstring + what + " " + self.name + ".")
+                char.notify(nstring + wstring + what + " " + self.name + ".</i>")
                 notified += [char]
             else:
                 twolist += [{"char":char,"node":node}]
@@ -221,7 +221,7 @@ class Node(SQLObject):
                 if char in notified:
                     continue
                 if char in self.watchers or random() > 1.0/3:
-                    nstring = "Your agent at " + node.name + " tells you:<br/>"
+                    nstring = "Your agent at " + node.name + " tells you:<br/><i>"
                     got = sample(info, 2)
                     if "who" in got:
                         if who.isdisguised:
@@ -238,6 +238,7 @@ class Node(SQLObject):
                         nstring += self.name + "."
                     else:
                         nstring += "someone."
+                    nstring += "</i>"
                     char.notify(nstring)
                     notified += [char]
                 else:
@@ -249,7 +250,7 @@ class Node(SQLObject):
                 if char in notified:
                     continue
                 if char in twolist or random() > 1.0/3:
-                    nstring = "Your agent at " + node.name + " tells you:<br/>"
+                    nstring = "Your agent at " + node.name + " tells you:<br/><i>"
                     got = sample(info, 1)
                     if "who" in got:
                         if who.isdisguised:
@@ -266,6 +267,7 @@ class Node(SQLObject):
                         nstring += self.name + "."
                     else:
                         nstring += "someone."
+                    nstring += "</i>"
                     char.notify(nstring)
                     notified += [char]
                 else:
