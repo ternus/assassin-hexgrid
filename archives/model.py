@@ -107,7 +107,7 @@ class Node(SQLObject):
             for rumor in allrumors:
                 myrandom = random()
                 print "Checking " + rumor.subject + " " + str(myrandom) + " " + str(rumor.probability)
-                if (myrandom < rumor.probability and not rumor in self.info and not rumor.subject in subjlist and random() < (1.0 / (len(rumor.node))) ):
+                if (myrandom < rumor.probability and not rumor in self.info and not rumor.subject in subjlist):
                     self.addInfo(rumor)
                     print "Added rumor " + rumor.subject
                     if len(self.info) >= self.rumorsatonce: 
