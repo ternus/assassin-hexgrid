@@ -585,7 +585,7 @@ class Root(controllers.RootController):
         os.spawnlp(os.P_WAIT, "convert", "", "archive/static/images/map"+char.name+".svg", "archive/static/images/map"+char.name+".png")
         map = "<img src='/static/images/map"+char.name+".png' />"
         goback = "<a href='/gm'>Go back to GM Panel.</a>"
-        return dict(map=map, goback=goback)
+        return dict(map=map, goback=goback, character=char)
         
 
 
