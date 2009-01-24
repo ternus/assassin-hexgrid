@@ -188,10 +188,12 @@ class Root(controllers.RootController):
                     rumorwad += "<li>"
                     rumorwad += rumorstrings[int(int(hashlib.md5(rumor.subject + str(rumor.id)).hexdigest()[0], 16) / 2)] % rumor.subject # don't worry about it
                     if rumor.cost <= char.wealth:
-                        rumorwad += " [<a href=\'/rumor/"+str(node.hex)+"/"+str(rumor.id)+"'><b>Hear</b></a>: " + str(rumor.cost) + " deben]"
-                        if ((rumor.cost * 2) <= char.wealth):
-                            if (len(list(Interaction.select(AND(Interaction.q.character==char.name, Interaction.q.node==node.hex, Interaction.q.item=="_rumor"+str(rumor.id)+"_"+rumor.subject))))):
+                        if (len(list(Interaction.select(AND(Interaction.q.character==char.name, Interaction.q.item=="_rumor"+str(rumor.id)+"_"+rumor.subject))))):
+                            rumorwad += " [<a href=\'/rumor/"+str(node.hex)+"/"+str(rumor.id)+"'><b>Hear Again</b></a>]"
+                            if ((rumor.cost * 2) <= char.wealth):
                                 rumorwad += " [<a href=\'/squelch/"+str(node.hex)+"/"+str(rumor.id)+"'><b>Squelch</b></a>: " + str(rumor.cost * 2) + " deben]"
+                        else:
+                            rumorwad += " [<a href=\'/rumor/"+str(node.hex)+"/"+str(rumor.id)+"'><b>Hear</b></a>: " + str(rumor.cost) + " deben]"
 
                     else:
                         rumorwad += " [too expensive]"
