@@ -704,7 +704,7 @@ class Root(controllers.RootController):
             thenode.notifyWatchers(char, "heard a rumor about " + therumor.subject + " from")
             if char.isdisguised: char.isdisguised = 0
             char.wealth -= therumor.cost
-            thenode.popRumors()
+            thenode.popRumors(therumor.id)
 
         goback = "<a href='/"+thehex+"'>Go back to " + thenode.name + ".</a>"
         squelch = "<a href=\'/squelch/"+str(thenode.hex)+"/"+str(therumor.id)+"'>Squelch this rumor for " + str(therumor.cost * 2) + " deben</a>."
