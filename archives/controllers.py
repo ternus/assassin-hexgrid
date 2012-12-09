@@ -189,7 +189,7 @@ class Root(controllers.RootController):
                     rumorwad += rumorstrings[int(int(hashlib.md5(rumor.subject + str(rumor.id)).hexdigest()[0], 16) / 2)] % rumor.subject # don't worry about it
                     if rumor.cost <= char.wealth:
                         if (len(list(Interaction.select(AND(Interaction.q.character==char.name, Interaction.q.item=="_rumor"+str(rumor.id)+"_"+rumor.subject))))):
-                            rumorwad += " [<a href=\'/rumor/"+str(node.hex)+"/"+str(rumor.id)+"'><b>Hear Again</b></a>]"
+                            rumorwad += " [<a href=\'/rumor/"+str(node.hex)+"/"+str(rumor.id)+"/1'><b>Hear Again</b></a>]"
                             if ((rumor.cost * 2) <= char.wealth):
                                 rumorwad += " [<a href=\'/squelch/"+str(node.hex)+"/"+str(rumor.id)+"'><b>Squelch</b></a>: " + str(rumor.cost * 2) + " deben]"
                         else:
@@ -687,7 +687,7 @@ class Root(controllers.RootController):
 
     @expose(template="archives.templates.buyrumor")
     @identity.require(identity.not_anonymous())
-    def rumor(self, thehex, rumorid):
+    def rumor(self, thehex, rumorid, hearagain=0):
         char = Character.byName(turbogears.identity.current.user.character)
         if not char.hasHex(thehex):
             flash("You don't know anyone selling that rumor!")
@@ -698,7 +698,7 @@ class Root(controllers.RootController):
             raise turbogears.redirect("/" + str(char.currentNode))
         thenode = Node.byHex(thehex)
         
-        if not (len(list(Interaction.select(AND(Interaction.q.character==char.name, Interaction.q.node==thenode.hex, Interaction.q.item=="_rumor"+str(therumor.id)+"_"+therumor.subject))))):
+        if not (len(list(Interaction.select(AND(Interaction.q.character==char.name, Interaction.q.item=="_rumor"+str(therumor.id)+"_"+therumor.subject))))) and not hearagain:
             inter = Interaction(character=char.name, day=today(), node=thenode.hex, item="_rumor"+str(therumor.id)+"_"+therumor.subject)
             char.notify(thenode.name + " told you a rumor about " + therumor.subject + " for " + str(therumor.cost) + " deben:<br/><i>" + therumor.text + "</i>")
             thenode.notifyWatchers(char, "heard a rumor about " + therumor.subject + " from")
@@ -728,6 +728,7 @@ class Root(controllers.RootController):
         char.notify(thenode.name + " squelched a rumor about " + therumor.subject + " for " + str(therumor.cost * 2) + " deben:<br/><i>" + therumor.text + "</i>")
         thenode.notifyWatchers(char, "squelched a rumor about " + therumor.subject + " by paying off")
         if char.isdisguised: char.isdisguised = 0
+        inter = Interaction(character=char.name, day=today(), node=thenode.hex, item="_rumorsquelch"+str(therumor.id)+"_"+therumor.subject)
         flash("Rumor squelched!")
         raise turbogears.redirect("/"+str(char.currentNode))
 
@@ -746,6 +747,7 @@ class Root(controllers.RootController):
             if secret.password == thepass:
                 found = True
                 thenode.notifyWatchers(char, "whispered something to")
+                inter = Interaction(character=char.name, day=today(), node=thenode.hex, item="PASSWORD_"+thepass)
                 if secret.moneycost != 0 or secret.othercost != "":
                     raise turbogears.redirect("/req/"+str(secret.id))
                 else: 

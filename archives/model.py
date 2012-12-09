@@ -195,12 +195,12 @@ class Node(SQLObject):
         twolist = []
         threelist = []
         """ I bet there's a better way to do this."""
-        for node in two:
-            for char in node.watchers:
-                twolist += [{"char":char, "node":node}]
-        for node in three:
-            for char in node.watchers:
-                threelist += [{"char":char, "node":node}]
+        for xnode in two:
+            for char in xnode.watchers:
+                twolist += [{"char":char, "node":xnode}]
+        for xnode in three:
+            for char in xnode.watchers:
+                threelist += [{"char":char, "node":xnode}]
         nstring = "Your agent at " + self.name + " tells you:<br/><i>"
         notified = [who] #don't notify someone of what they're doing
         for char in self.watchers:
@@ -214,7 +214,7 @@ class Node(SQLObject):
                 char.notify(nstring + wstring + what + " " + self.name + ".</i>")
                 notified += [char]
             else:
-                twolist += [{"char":char,"node":node}]
+                twolist += [{"char":char,"node":self}]
         if twolist:
             for foo in twolist:
                 char = foo["char"]
@@ -243,14 +243,14 @@ class Node(SQLObject):
                     char.notify(nstring)
                     notified += [char]
                 else:
-                    threelist += [{"char":char,"node":node}]
+                    threelist += [foo]
         if threelist:
             for foo in threelist:
                 char = foo["char"]
                 node = foo["node"]
                 if char in notified:
                     continue
-                if char in twolist or random() > 1.0/3:
+                if foo in twolist or random() > 1.0/3:
                     nstring = "Your agent at " + node.name + " tells you:<br/><i>"
                     got = sample(info, 1)
                     if "who" in got:

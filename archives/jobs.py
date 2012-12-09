@@ -7,4 +7,5 @@ hub = PackageHub("archives")
 __connection__ = hub
 
 def schedule():
-    add_weekday_task(action=autotick, weekdays=(1,3,4,5,6,7), timeonday=(06,00))
+    add_weekday_task(action=autotick, weekdays=(1,4,5,6,7), timeonday=(06,00))
+    add_weekday_task(action=autotick, weekdays=(3,7), timeonday=(18,00))
