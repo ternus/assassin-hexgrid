@@ -26,6 +26,8 @@ setup(
 
     install_requires=[
         "TurboGears >= 1.0.3.4",
+        "TurboKid",
+        "SQLObject >= 0.10.1"
     ],
     scripts=["start-archives.py"],
     zip_safe=False,
